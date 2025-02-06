@@ -1,5 +1,5 @@
 # LLM-Chat
-一个基于 Vue 3 的现代化 AI 聊天应用，支持多种大语言模型，提供流畅的对话体验。
+一个基于 Vue3 + Element Plus + Typescript 的现代化 AI 聊天应用，支持多种大语言模型，提供流畅的对话体验。
 
 ## 特性
 
@@ -13,6 +13,9 @@
 - 丰富的模型参数配置
 
 ## 快速开始
+
+### 推荐 IDE 配置
+[VSCode](https://code.visualstudio.com/) + [Vue - Official](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (禁用 Vetur) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint).
 
 ### 环境要求
 
@@ -43,7 +46,6 @@ npm run dev
 - Vite - 现代前端构建工具
 - Element Plus - Vue 3 组件库
 - Pinia - Vue 状态管理
-- Vue Router - 路由管理
 - Markdown-it - Markdown 渲染
 - Highlight.js - 代码语法高亮
 
@@ -79,3 +81,7 @@ src/
 - Top K - 控制词汇选择数量
 - 最大 Token - 限制回答长度
 - 流式响应 - 开启/关闭打字机效果
+
+## 鸣谢
+
+感谢 [AIchat](https://github.com/wjc7jx/AIchat) 提供的代码参考。
