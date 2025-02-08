@@ -31,11 +31,18 @@ git clone https://github.com/STEVENTAN100/LLM-Chat.git
 # 进入项目目录
 cd LLM-Chat
 
+# 安装nrm
+npm install -g nrm
+
+# 使用淘宝源
+nrm use taobao
+
 # 安装依赖
 npm install
 
 # 启动开发服务器
 npm run dev
+
 ```
 
 ### 获取API密钥：[siliconflow网址](https://siliconflow.cn/zh-cn/)
@@ -60,13 +67,14 @@ src/
 │   ├── ChatInput.vue      # 输入组件
 │   └── SettingsPanel.vue  # 设置面板
 ├── stores/         # 状态管理
-│   ├── chat.js     # 聊天状态
-│   └── settings.js # 设置状态
+│   ├── chat.ts     # 聊天状态
+│   └── settings.ts # 设置状态
 ├── utils/          # 工具函数
-│   ├── api.js      # API 请求
-│   ├── markdown.js # Markdown 处理
-│   └── messageHandler.js # 消息处理
+│   ├── api.ts      # API 请求
+│   ├── markdown.ts # Markdown 处理
+│   └── messageHandler.ts # 消息处理
 ├── views/          # 页面视图
+│   └── ChatView.vue # 聊天视图
 └── App.vue         # 根组件
 ```
 

@@ -76,6 +76,6 @@ export const useChatStore = defineStore('chat', {
 
   persist: {
     key: 'ai-chat-history',
-    storage: localStorage,
+    storage: localStorage
   },
 })

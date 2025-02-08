@@ -109,10 +109,12 @@ const handleCodeBlockClick = (event: MouseEvent) => {
 }
 
 // 处理编辑时的按键事件
-const handleEditKeydown = (e) => {
-  if (e.shiftKey) return // 如果按住 Shift，允许换行
+const handleEditKeydown = (e: Event) => {
+  const keyboardEvent = e as KeyboardEvent
+  if (keyboardEvent.shiftKey) return // 如果按住 Shift，允许换行
   saveEdit() // 直接保存并发送
 }
+
 
 // 处理重新生成
 const handleRegenerate = () => {

@@ -2,14 +2,12 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import { Setting } from '@element-plus/icons-vue'
 import { useChatStore } from '../stores/chat.ts'
+import { useSettingsStore } from '../stores/settings.ts'
 import { chatApi } from '../utils/api.ts'
 import { messageHandler, type SyncResponse } from '../utils/messageHandler.ts'
 import ChatMessage from '../components/ChatMessage.vue'
 import ChatInput from '../components/ChatInput.vue'
-
 import SettingsPanel from '../components/SettingsPanel.vue'
-import { useSettingsStore } from '../stores/settings.ts'
-
 
 // 初始化聊天存储
 const chatStore = useChatStore()
