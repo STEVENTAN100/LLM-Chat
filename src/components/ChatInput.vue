@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { Delete, Position, Upload, Plus, Document } from '@element-plus/icons-vue'
-import { useChatStore } from '../stores/chat'
-import { ElMessageBox } from 'element-plus'
+import { useChatStore } from '../stores/chat.ts'
+import { ElInput, ElMessage, ElMessageBox } from 'element-plus'
 
 // 定义组件的属性
 const props = defineProps({
@@ -28,7 +28,7 @@ Shift + Enter 换行`
 const tokenCount = computed(() => chatStore.tokenCount)
 
 const showUpload = ref(false)
-const selectedFiles = ref([])
+const selectedFiles = ref<File[]>([])
 
 // 切换上传区域显示
 const toggleUpload = () => {
@@ -36,22 +36,22 @@ const toggleUpload = () => {
 }
 
 // 处理文件选择
-const handleFileChange = (file) => {
+const handleFileChange = (file: { raw: File }) => {
   selectedFiles.value.push(file.raw)
 }
 
 // 移除文件
-const removeFile = (index) => {
+const removeFile = (index: number) => {
   selectedFiles.value.splice(index, 1)
 }
 
 // 判断是否为图片文件
-const isImage = (file) => {
+const isImage = (file: File) => {
   return file.type.startsWith('image/')
 }
 
 // 获取预览URL
-const getPreviewUrl = (file) => {
+const getPreviewUrl = (file: File) => {
   return URL.createObjectURL(file)
 }
 
@@ -88,11 +88,11 @@ const handleSend = async () => {
 }
 
 // 将图片转换为base64
-const convertImageToBase64 = (file) => {
+const convertImageToBase64 = (file: File) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = (e) => {
-      resolve(`![${file.name}](${e.target.result})`)
+      resolve(`![${file.name}](${e.target?.result})`)
     }
     reader.onerror = reject
     reader.readAsDataURL(file)
@@ -100,11 +100,11 @@ const convertImageToBase64 = (file) => {
 }
 
 // 读取文件内容
-const readFileContent = (file) => {
+const readFileContent = (file: File) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = (e) => {
-      resolve(`\`\`\`\n${e.target.result}\n\`\`\``)
+      resolve(`\`\`\`\n${e.target?.result}\n\`\`\``)
     }
     reader.onerror = reject
     reader.readAsText(file)
@@ -112,7 +112,7 @@ const readFileContent = (file) => {
 }
 
 // 处理换行的函数
-const newline = (e) => {
+const newline = () => {
   // 在消息文本中添加换行符
   messageText.value += '\n'
 }
@@ -137,7 +137,7 @@ const handleClear = async () => {
   }
 }
 
-const inputRef = ref(null)
+const inputRef = ref<InstanceType<typeof ElInput> | null>(null)
 
 // 调整输入框高度的方法
 const adjustHeight = () => {

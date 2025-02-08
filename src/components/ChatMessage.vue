@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, nextTick } from 'vue'
-import { renderMarkdown } from '../utils/markdown'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { renderMarkdown } from '../utils/markdown.ts'
+import { ElInput, ElMessage, ElMessageBox } from 'element-plus'
 import { Edit, Delete, RefreshRight, CopyDocument } from '@element-plus/icons-vue'
-import { useChatStore } from '../stores/chat'
+import { useChatStore } from '../stores/chat.ts'
+
 
 // 定义组件属性
 const props = defineProps({
@@ -22,7 +23,7 @@ const emit = defineEmits(['update', 'delete', 'regenerate'])
 const markdownBody = ref(null)
 const isEditing = ref(false)
 const editContent = ref('')
-const editInputRef = ref(null)
+const editInputRef = ref<InstanceType<typeof ElInput> | null>(null)
 
 // 从 store 中获取 loading 状态
 const chatStore = useChatStore()
@@ -75,7 +76,7 @@ const handleDelete = async () => {
 }
 
 // 格式化时间函数
-const formatTime = (timestamp) => {
+const formatTime = (timestamp: string) => {
   return new Date(timestamp).toLocaleTimeString()
 }
 
@@ -85,7 +86,7 @@ const renderedContent = computed(() => {
 })
 
 // 复制文本到剪贴板
-const copyToClipboard = async (text) => {
+const copyToClipboard = async (text: string) => {
   try {
     await navigator.clipboard.writeText(text)
     ElMessage.success('代码已复制到剪贴板')
@@ -96,21 +97,24 @@ const copyToClipboard = async (text) => {
 }
 
 // 处理代码块点击事件
-const handleCodeBlockClick = (event) => {
-  const preElement = event.target.closest('pre')
+const handleCodeBlockClick = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+  const preElement = target?.closest('pre')
   if (preElement) {
     const codeElement = preElement.querySelector('code')
     if (codeElement) {
-      copyToClipboard(codeElement.textContent)
+      copyToClipboard(codeElement.textContent || '')
     }
   }
 }
 
 // 处理编辑时的按键事件
-const handleEditKeydown = (e) => {
-  if (e.shiftKey) return // 如果按住 Shift，允许换行
+const handleEditKeydown = (e: Event) => {
+  const keyboardEvent = e as KeyboardEvent
+  if (keyboardEvent.shiftKey) return // 如果按住 Shift，允许换行
   saveEdit() // 直接保存并发送
 }
+
 
 // 处理重新生成
 const handleRegenerate = () => {
@@ -182,10 +186,10 @@ const handleCopyAll = async () => {
         <!-- 用户消息的操作按钮 -->
         <div class="message-actions" v-if="!loading && message.role === 'user' && !isEditing">
           <el-button-group>
-            <el-button type="text" size="small" @click="startEdit">
+            <el-button link size="small" @click="startEdit">
               <el-icon><Edit /></el-icon>
             </el-button>
-            <el-button type="text" size="small" @click="handleDelete">
+            <el-button link size="small" @click="handleDelete">
               <el-icon><Delete /></el-icon>
             </el-button>
           </el-button-group>
@@ -194,7 +198,7 @@ const handleCopyAll = async () => {
         <div class="message-actions" v-if="!loading && message.role === 'assistant'">
           <el-button-group>
             <el-button 
-              type="text" 
+              link 
               size="small" 
               @click="handleRegenerate" 
               :title="'重新生成'"
@@ -203,7 +207,7 @@ const handleCopyAll = async () => {
               <el-icon><RefreshRight /></el-icon>
             </el-button>
             <el-button 
-              type="text" 
+              link 
               size="small" 
               @click="handleCopyAll" 
               :title="'复制全部'"

@@ -7,7 +7,7 @@ const md = new MarkdownIt({
   html: true,
   linkify: true,
   typographer: true,
-  highlight: function (str, lang) {
+  highlight: function (str: string, lang: string): string {
     if (lang && hljs.getLanguage(lang)) {
       try {
         const highlighted = hljs.highlight(str, { 
@@ -18,12 +18,17 @@ const md = new MarkdownIt({
         return `<pre class="hljs"><div class="code-header">
           <span class="code-lang">${lang}</span>
         </div><code class="${lang}">${highlighted}</code></pre>`
-      } catch (__) {}
+      } catch (error) {
+        // 发生错误时返回转义后的代码
+        console.error(error)
+        return `<pre class="hljs"><code>${md.utils.escapeHtml(str)}</code></pre>`
+      }
     }
     return `<pre class="hljs"><code>${md.utils.escapeHtml(str)}</code></pre>`
   }
 })
+
 // 导出渲染函数
-export const renderMarkdown = (content) => {
+export const renderMarkdown = (content: string): string => {
   return md.render(content)
-}
+} 
