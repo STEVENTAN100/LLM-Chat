@@ -1,6 +1,6 @@
-<script setup>
-import { ref, reactive, computed } from 'vue'
-import { useSettingsStore, modelOptions } from '../stores/settings'
+<script setup lang="ts">
+import { reactive, computed } from 'vue'
+import { useSettingsStore, modelOptions } from '../stores/settings.ts'
 import { ElMessage } from 'element-plus'
 
 // 定义组件的props
@@ -33,7 +33,7 @@ const settings = reactive({
 })
 
 // 处理深色模式切换
-const handleDarkModeChange = (value) => {
+const handleDarkModeChange = () => {
   settingsStore.toggleDarkMode()
 }
 
@@ -47,7 +47,7 @@ const handleSave = () => {
 
 <template>
   <!-- 设置抽屉组件，用于展示和编辑应用设置 -->
-  <el-drawer style="background-color: var(--bg-color);" v-model="visible" title="设置" direction="rtl" size="400px">
+  <el-drawer style="background-color: var(--bg-color);" v-model="visible" title="设置" direction="rtl" size="380px">
     <div class="settings-container">
       <!-- 使用element-plus的表单组件来展示和编辑设置 -->
       <el-form :model="settings" label-width="120px">

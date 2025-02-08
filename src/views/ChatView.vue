@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import { Setting } from '@element-plus/icons-vue'
-import { useChatStore } from '../stores/chat'
-import { chatApi } from '../utils/api'
-import { messageHandler } from '../utils/messageHandler'
+import { useChatStore } from '../stores/chat.ts'
+import { chatApi } from '../utils/api.ts'
+import { messageHandler, type SyncResponse } from '../utils/messageHandler.ts'
 import ChatMessage from '../components/ChatMessage.vue'
 import ChatInput from '../components/ChatInput.vue'
+
 import SettingsPanel from '../components/SettingsPanel.vue'
-import { useSettingsStore } from '../stores/settings'
+import { useSettingsStore } from '../stores/settings.ts'
+
 
 // 初始化聊天存储
 const chatStore = useChatStore()
@@ -56,13 +58,13 @@ const handleSend = async (content: string) => {
         // 处理流式响应或同步响应
         if (settingsStore.streamResponse) {
             // 流式处理，并更新消息和token计数
-            await messageHandler.processStreamResponse(response, {
+            await messageHandler.processStreamResponse(response as Response, {
                 updateMessage: (content) => chatStore.updateLastMessage(content),
                 updateTokenCount: (usage) => chatStore.updateTokenCount(usage)
             });
         } else {
             // 同步处理，并更新消息和token计数
-            const result = await messageHandler.processSyncResponse(response, (content) => {
+            const result = await messageHandler.processSyncResponse(response as SyncResponse, (content) => {
                 chatStore.updateLastMessage(content)
             });
             if (result.usage) {
@@ -70,10 +72,12 @@ const handleSend = async (content: string) => {
             }
         }
     } catch (error) {
+        console.error('发送消息失败:', error)
         chatStore.updateLastMessage('抱歉，发生了错误，请稍后重试。')
     } finally {
         chatStore.isLoading = false
     }
+
 }
 
 /**
@@ -84,7 +88,7 @@ const handleClear = () => {
 }
 
 // 处理消息更新
-const handleMessageUpdate = async (updatedMessage) => {
+const handleMessageUpdate = async (updatedMessage: { id: number; content: string }) => {
 
     const index = chatStore.messages.findIndex(m => m.id === updatedMessage.id)
     if (index !== -1) {
@@ -96,16 +100,15 @@ const handleMessageUpdate = async (updatedMessage) => {
 }
 
 // 处理消息删除
-const handleMessageDelete = (message) => {
+const handleMessageDelete = (message: { id: number }) => {
     const index = chatStore.messages.findIndex(m => m.id === message.id)
     if (index !== -1) {
         // 删除该消息及其后的助手回复
         chatStore.messages.splice(index, 2)
     }
 }
-
 // 处理重新生成
-const handleRegenerate = async (message) => {
+const handleRegenerate = async (message: { id: number; timestamp: string; role: "user" | "assistant"; content: string }) => {
     console.log(message)
     console.log(chatStore.messages)
 
@@ -148,7 +151,7 @@ const handleRegenerate = async (message) => {
         <div class="messages-container" ref="messagesContainer">
             <template v-if="messages.length">
                 <chat-message v-for="message in messages" :key="message.id" :message="message"
-                    :loading="message.loading" @update="handleMessageUpdate" @delete="handleMessageDelete"
+                    @update="handleMessageUpdate" @delete="handleMessageDelete"
                     @regenerate="handleRegenerate" />
             </template>
             <div v-else class="empty-state">
