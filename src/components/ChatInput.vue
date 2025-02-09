@@ -112,10 +112,7 @@ const readFileContent = (file: File) => {
 }
 
 // 处理换行的函数
-const newline = () => {
-  // 在消息文本中添加换行符
-  messageText.value += '\n'
-}
+const newline = () => {}
 
 // 处理清空对话的函数
 const handleClear = async () => {
