@@ -372,6 +372,17 @@ const handleCopyAll = async () => {
       > *:last-child {
         margin-bottom: 0;
       }
+
+      // LaTeX 公式样式
+      .katex-display {
+        margin: 1em 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+      }
+      
+      .katex {
+        font-size: 1.1em;
+      }
     }
   }
 }

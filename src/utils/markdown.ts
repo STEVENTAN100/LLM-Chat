@@ -1,6 +1,8 @@
 import MarkdownIt from 'markdown-it'
 import hljs from 'highlight.js'
+import katex from 'katex'
 import 'highlight.js/styles/github.css'
+import 'katex/dist/katex.min.css'
 
 // 创建 markdown-it 实例
 const md = new MarkdownIt({
@@ -27,6 +29,81 @@ const md = new MarkdownIt({
     return `<pre class="hljs"><code>${md.utils.escapeHtml(str)}</code></pre>`
   }
 })
+
+// 添加 LaTeX 支持
+const renderLatex = (tex: string, displayMode: boolean): string => {
+  try {
+    return katex.renderToString(tex, {
+      displayMode: displayMode,
+      throwOnError: false,
+      output: 'html'
+    })
+  } catch (error) {
+    console.error('LaTeX 渲染错误:', error)
+    return tex
+  }
+}
+
+// 定义公式格式正则表达式
+const INLINE_MATH_RULES = [
+  /\$([^$]+)\$/,           // $...$
+  /\[([^\]]+)\]/,         // [...]
+  /\\\((.*?)\\\)/,        // \(...\)
+  /\$(.*?)\$/             // $...$（单行）
+]
+
+const BLOCK_MATH_RULES = [
+  /\$\$([\s\S]+?)\$\$/,   // $$...$$
+  /\\\[([\s\S]+?)\\\]/    // \[...\]
+]
+
+// 添加行内公式支持
+md.inline.ruler.before('escape', 'math_inline', (state, silent) => {
+  const content = state.src.slice(state.pos)
+  
+  for (const rule of INLINE_MATH_RULES) {
+    const match = content.match(rule)
+    if (match && match.index === 0) {
+      if (!silent) {
+        const token = state.push('math_inline', '', 0)
+        token.content = match[1].trim()
+        token.markup = match[0][0] // 保存公式的起始标记
+      }
+      state.pos += match[0].length
+      return true
+    }
+  }
+  return false
+})
+
+// 添加块级公式支持
+md.block.ruler.before('paragraph', 'math_block', (state, startLine, _endLine, silent) => {
+  const content = state.src.slice(state.bMarks[startLine] + state.tShift[startLine])
+  
+  for (const rule of BLOCK_MATH_RULES) {
+    const match = content.match(rule)
+    if (match && match.index === 0) {
+      if (!silent) {
+        const token = state.push('math_block', '', 0)
+        token.content = match[1].trim()
+        token.markup = match[0].slice(0, 2) // 保存公式的起始标记
+        token.map = [startLine, startLine + match[0].split('\n').length]
+      }
+      state.line = startLine + match[0].split('\n').length
+      return true
+    }
+  }
+  return false
+})
+
+// 渲染规则
+md.renderer.rules.math_inline = (tokens, idx) => {
+  return renderLatex(tokens[idx].content, false)
+}
+
+md.renderer.rules.math_block = (tokens, idx) => {
+  return renderLatex(tokens[idx].content, true)
+}
 
 // 导出渲染函数
 export const renderMarkdown = (content: string): string => {
