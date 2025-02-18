@@ -8,8 +8,10 @@ import ChatView from './views/ChatView.vue'
 
 <style lang="scss">
 .app-container {
-  min-height: 100vh;
+  width: 100vw;
+  height: 100vh;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  overflow: hidden;
 }
 </style>

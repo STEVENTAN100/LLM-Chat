@@ -119,7 +119,7 @@ const handleClear = async () => {
   try {
     // 使用Element Plus的消息框组件，提示用户是否确定清空对话记录
     await ElMessageBox.confirm(
-      '确定要清空所有对话记录吗？',
+      '确定要清空当前会话的所有对话记录吗？',
       '警告',
       {
         confirmButtonText: '确定',
