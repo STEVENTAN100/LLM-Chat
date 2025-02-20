@@ -142,6 +142,7 @@ const handleCopyAll = async () => {
       message.role === 'assistant' ? 'message-assistant' : 'message-user',
       { 'loading': loading }
     ]"
+    :data-message-id="message.id"
   >
     <!-- 消息头像，根据消息角色显示不同图标 -->
     <div class="message-avatar">

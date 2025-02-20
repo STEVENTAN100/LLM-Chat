@@ -9,6 +9,7 @@ import ChatMessage from '../components/ChatMessage.vue'
 import ChatInput from '../components/ChatInput.vue'
 import SettingsPanel from '../components/SettingsPanel.vue'
 import SideBar from '../components/SideBar.vue'
+import SearchBar from '../components/SearchBar.vue'
 
 // 初始化聊天存储
 const chatStore = useChatStore()
@@ -164,7 +165,8 @@ const handleRegenerate = async (message: { id: number; timestamp: string; role: 
         <div class="chat-container">
             <!-- 聊天头部，包含标题和设置按钮 -->
             <div class="chat-header">
-                <h1>AI Chat</h1>
+                <h1>LLM Chat</h1>
+                <search-bar />
                 <el-button circle :icon="Setting" @click="showSettings = true" />
             </div>
 
