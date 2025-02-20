@@ -65,7 +65,9 @@ src/
 ├── components/     # 组件
 │   ├── ChatMessage.vue    # 消息组件
 │   ├── ChatInput.vue      # 输入组件
-│   └── SettingsPanel.vue  # 设置面板
+│   |── SearchBar.vue      # 搜索组件
+│   |── SettingsPanel.vue  # 设置面板
+│   └── SideBar.vue      # 侧边栏组件
 ├── stores/         # 状态管理
 │   ├── chat.ts     # 聊天状态
 │   └── settings.ts # 设置状态

@@ -148,12 +148,12 @@ watch(search, (newValue, oldValue) => {
         >
           <template #append>
             <el-button 
-              type="primary" 
+              type="primary"
               :icon="ChatRound"
               :loading="isAsking"
               @click="handleAsk"
               title="向 AI 提问"
-              class="ask-button"
+              class="ask-button custom-primary"
             />
           </template>
         </el-input>
@@ -245,11 +245,26 @@ watch(search, (newValue, oldValue) => {
   background: none;
 }
 
-:deep(.ask-button) {
+:deep(.ask-button.custom-primary) {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   margin: -1px -1px -1px 0;
   height: calc(100% + 2px);
+  background-color: #409EFF !important;
+  border-color: #409EFF !important;
+  color: white !important;
+}
+
+:deep(.ask-button.custom-primary:hover) {
+  background-color: #66b1ff !important;
+  border-color: #66b1ff !important;
+  color: white !important;
+}
+
+:deep(.ask-button.custom-primary:active) {
+  background-color: #3a8ee6 !important;
+  border-color: #3a8ee6 !important;
+  color: white !important;
 }
 
 :deep(.highlight) {
