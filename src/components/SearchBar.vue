@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
+import { renderMarkdown } from '../utils/markdown.ts'
+import { ElMessage } from 'element-plus'
 import { Search, ChatRound } from '@element-plus/icons-vue'
 import { useChatStore } from '../stores/chat'
 import { chatApi } from '../utils/api'
@@ -28,6 +30,11 @@ const filteredHistory = computed(() => {
       id: msg.id
     }))
     .slice(0, 5)
+})
+
+// 计算属性：渲染 Markdown 内容
+const renderedContent = computed(() => {
+  return renderMarkdown(streamResponse.value)
 })
 
 // 处理搜索
@@ -116,6 +123,29 @@ const handleShortcut = (e: KeyboardEvent) => {
   }
 }
 
+// 复制文本到剪贴板
+const copyToClipboard = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    ElMessage.success('代码已复制到剪贴板')
+  } catch (err) {
+    console.error('复制失败:', err)
+    ElMessage.error('复制失败')
+  }
+}
+
+// 处理代码块点击事件
+const handleCodeBlockClick = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+  const preElement = target?.closest('pre')
+  if (preElement) {
+    const codeElement = preElement.querySelector('code')
+    if (codeElement) {
+      copyToClipboard(codeElement.textContent || '')
+    }
+  }
+}
+
 // 组件挂载时添加事件监听
 onMounted(() => {
   document.addEventListener('keydown', handleShortcut)
@@ -169,7 +199,7 @@ watch(search, (newValue, oldValue) => {
             class="assistant-avatar"
             :size="24"
           />
-          <div class="preview-content">{{ streamResponse }}</div>
+          <div class="preview-content" v-html="renderedContent" @click="handleCodeBlockClick"></div>
         </div>
       </li>
       <div v-if="streamResponse && filteredHistory.length > 0" class="divider" />
@@ -184,7 +214,7 @@ watch(search, (newValue, oldValue) => {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .search-container {
   position: relative;
   width: 100%;
@@ -224,10 +254,151 @@ watch(search, (newValue, oldValue) => {
 }
 
 .preview-content {
-  flex: 1;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  white-space: pre-wrap;
+  :deep() {
+    // Markdown 内容样式
+    h1, h2, h3, h4, h5, h6 {
+      margin: 0.5rem 0;
+      font-weight: 600;
+      line-height: 1.25;
+    }
+
+    p {
+      margin: 0.25rem 0;
+    }
+
+    code {
+      font-family: var(--code-font-family);
+      padding: 0.2em 0.4em;
+      margin: 0;
+      font-size: 85%;
+      background-color: var(--code-bg);
+      border-radius: 3px;
+      color: var(--code-text);
+    }
+
+    pre {
+      position: relative;
+      padding: 2rem 1rem 1rem;
+      overflow: auto;
+      font-size: 85%;
+      line-height: 1.45;
+      background-color: var(--code-block-bg);
+      border-radius: var(--border-radius);
+      margin: 0.5rem 0;
+      border: 1px solid var(--border-color);
+      
+      // 代码头部样式
+      .code-header {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        padding: 0.3rem 1rem;
+        background-color: var(--code-header-bg);
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-family: var(--code-font-family);
+        
+        .code-lang {
+          font-size: 0.8rem;
+          color: var(--text-color-secondary);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+      }
+
+      &::after {
+        content: "点击复制";
+        position: absolute;
+        top: 0.3rem;
+        right: 1rem;
+        padding: 0.2rem 0.5rem;
+        font-size: 0.75rem;
+        color: var(--text-color-secondary);
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-family: system-ui, -apple-system, sans-serif;
+      }
+
+      &:hover::after {
+        opacity: 0.8;
+      }
+
+      code {
+        padding: 0;
+        background-color: transparent;
+        color: inherit;
+        display: block;
+        font-family: var(--code-font-family);
+      }
+    }
+
+    blockquote {
+      margin: 0.25rem 0;
+      padding: 0 0.75rem;
+      color: var(--text-color-secondary);
+      border-left: 0.25rem solid var(--border-color);
+    }
+
+    ul, ol {
+      margin: 0.25rem 0;
+      padding-left: 1.5rem;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 0.25rem 0;
+
+      th, td {
+        padding: 0.5rem;
+        border: 1px solid var(--border-color);
+      }
+
+      th {
+        background-color: var(--bg-color-secondary);
+      }
+    }
+
+    img {
+      max-width: 100%;
+      max-height: 300px;
+      object-fit: contain;
+      margin: 0.5rem 0;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      
+      &:hover {
+        opacity: 0.9;
+      }
+    }
+
+    a {
+      color: var(--primary-color);
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+
+    > *:last-child {
+      margin-bottom: 0;
+    }
+
+    // LaTeX 公式样式
+    .katex-display {
+      margin: 1em 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+    
+    .katex {
+      font-size: 1.1em;
+    }
+  }
 }
 
 .assistant-avatar {
