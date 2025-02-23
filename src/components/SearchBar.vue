@@ -37,6 +37,11 @@ const renderedContent = computed(() => {
   return renderMarkdown(streamResponse.value)
 })
 
+// 添加计算属性处理搜索结果的 Markdown 渲染
+const renderSearchItem = (content: string) => {
+  return renderMarkdown(content)
+}
+
 // 处理搜索
 const handleSearch = (e: Event) => {
   e.preventDefault()
@@ -206,7 +211,7 @@ watch(search, (newValue, oldValue) => {
       
       <template v-for="(item, index) in filteredHistory" :key="item.id">
         <li class="search-item" @click="handleSelect(item)">
-          <span class="text-sm">{{ item.content }}</span>
+          <span class="text-sm" v-html="renderSearchItem(item.content)"></span>
         </li>
         <div v-if="index < filteredHistory.length - 1" class="divider" />
       </template>
@@ -242,6 +247,21 @@ watch(search, (newValue, oldValue) => {
 .search-item {
   padding: 0.5rem 1rem;
   cursor: pointer;
+  
+  :deep(.markdown-body) {
+    p {
+      margin: 0; // 移除段落默认边距
+    }
+    
+    * {
+      font-size: inherit; // 继承搜索项的字体大小
+    }
+    
+    code {
+      padding: 0.1em 0.3em;
+      font-size: 0.9em;
+    }
+  }
 }
 
 .search-item:hover {
