@@ -61,8 +61,10 @@ export const useSettingsStore = defineStore('settings', {
 // 导出模型选项供其他组件使用
 export const modelOptions: ModelOption[] = [
     { label: 'DeepSeek-V3', value: 'deepseek-ai/DeepSeek-V3' },
+    { label: 'DeepSeek-R1', value: 'deepseek-ai/DeepSeek-R1' },
+    { label: 'DeepSeek-Janus-Pro-7B', value: 'deepseek-ai/Janus-Pro-7B' },
     { label: 'Qwen2.5-7B', value: 'Qwen/Qwen2.5-7B-Instruct' },
     { label: 'Qwen2.5-Coder-7B', value: 'Qwen/Qwen2.5-Coder-7B-Instruct' },
+    { label: 'Qwen2-VL-72B', value: 'Qwen/Qwen2-VL-72B-Instruct' },
     { label: 'Meta-Llama-3.1-8B', value: 'meta-llama/Meta-Llama-3.1-8B-Instruct' },
-    { label: 'DeepSeek-V2.5', value: 'deepseek-ai/DeepSeek-V2.5' },
 ]
