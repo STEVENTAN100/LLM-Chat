@@ -156,6 +156,26 @@ const handleDeleteModel = async (model: ModelOption) => {
     // 用户取消删除
   }
 }
+
+// 获取模型类型标签文字
+const getModelTypeLabel = (type: string) => {
+  const typeMap: Record<string, string> = {
+    'plain': '普通',
+    'visual': '视觉',
+    'text2img': '文生图'
+  }
+  return typeMap[type] || type
+}
+
+// 获取标签类型
+const getModelTagType = (type: string) => {
+  const typeMap: Record<string, '' | 'success' | 'warning' | 'info'> = {
+    'plain': '',
+    'visual': 'success',
+    'text2img': 'warning'
+  }
+  return typeMap[type] || 'info'
+}
 </script>
 
 <template>
@@ -172,15 +192,28 @@ const handleDeleteModel = async (model: ModelOption) => {
         <!-- 模型选择 -->
         <el-form-item label="模型">
           <div class="model-selection">
-            <el-select v-model="settings.model" class="w-full">
+            <el-select 
+              v-model="settings.model" 
+              class="w-full"
+              :popper-class="'model-select-dropdown'"
+            >
               <el-option
                 v-for="model in modelOptions"
                 :key="model.value"
-                :label="model.label"
+                :label="`${getModelTypeLabel(model.type)} | ${model.label}`"
                 :value="model.value"
               >
                 <div class="model-option">
-                  <span>{{ model.label }}</span>
+                  <div class="model-info">
+                    <el-tag 
+                      size="small" 
+                      :type="getModelTagType(model.type)"
+                      class="model-type-tag"
+                    >
+                      {{ getModelTypeLabel(model.type) }}
+                    </el-tag>
+                    <span>{{ model.label }}</span>
+                  </div>
                   <div v-if="settingsStore.customModels.includes(model)" class="model-actions">
                     <el-button link type="primary" @click.stop="showEditModelDialog(model)">
                       <el-icon><Edit /></el-icon>
@@ -297,6 +330,12 @@ const handleDeleteModel = async (model: ModelOption) => {
 </template>
 
 <style lang="scss" scoped>
+:deep(.model-select-dropdown) {
+  .el-select-dropdown__item {
+    padding: 0 12px;
+  }
+}
+
 // 设置页面样式
 .settings-container {
   padding: 1rem;
@@ -349,5 +388,18 @@ const handleDeleteModel = async (model: ModelOption) => {
   font-size: 14px;
   color: var(--el-text-color-secondary);
   cursor: help;
+}
+
+.model-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.model-type-tag {
+  font-size: 12px;
+  padding: 0 4px;
+  height: 20px;
+  line-height: 18px;
 }
 </style>
