@@ -308,10 +308,10 @@ const getModelTagType = (type: string) => {
     >
       <el-form :model="currentModel" label-width="100px">
         <el-form-item label="模型名称">
-          <el-input v-model="currentModel.label" placeholder="请输入模型名称" />
+          <el-input v-model="currentModel.label" placeholder="请输入模型名称(DS-R1)" />
         </el-form-item>
         <el-form-item label="模型标识">
-          <el-input v-model="currentModel.value" placeholder="请输入模型标识" />
+          <el-input v-model="currentModel.value" placeholder="请输入模型标识(deepseek-ai/DeepSeek-R1)" />
         </el-form-item>
         <el-form-item label="模型类型">
           <el-select v-model="currentModel.type">
