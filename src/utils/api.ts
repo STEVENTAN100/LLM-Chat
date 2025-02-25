@@ -3,10 +3,19 @@ import { useSettingsStore } from '../stores/settings'
 // 定义API基础URL
 const API_BASE_URL = 'https://api.siliconflow.cn/v1'
 
+// 定义视觉语言模型相关接口
+export interface VLMContentItem {
+    type: 'text' | 'image_url';
+    text?: string;
+    image_url?: {
+      url: string;
+    };
+}
+
 // 定义消息接口
-interface Message {
+export interface Message {
     role: 'user' | 'assistant'
-    content: string
+    content: string | VLMContentItem[]
 }
 
 // 定义API请求负载接口
@@ -83,15 +92,15 @@ class ChatAPI {
             response_format: {
                 type: "text"
             },
-            tools: [{
-                type: "function",
-                function: {
-                    description: "<string>",
-                    name: "<string>",
-                    parameters: {},
-                    strict: true
-                }
-            }]
+            // tools: [{
+            //     type: "function",
+            //     function: {
+            //         description: "<string>",
+            //         name: "<string>",
+            //         parameters: {},
+            //         strict: true
+            //     }
+            // }]
         }
 
         // 创建新的 AbortController
