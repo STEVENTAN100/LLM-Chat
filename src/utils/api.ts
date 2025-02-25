@@ -57,7 +57,16 @@ const createHeaders = (): Record<string, string> => {
     }
 }
 
-export const chatApi = {
+class ChatAPI {
+    private controller: AbortController | null = null
+
+    abortRequest() {
+        if (this.controller) {
+            this.controller.abort()
+            this.controller = null
+        }
+    }
+
     async sendMessage(messages: Message[], stream = false): Promise<Response | ChatResponse> {
         const settingsStore = useSettingsStore()
 
@@ -85,25 +94,36 @@ export const chatApi = {
             }]
         }
 
-        const response = await fetch(`${API_BASE_URL}/chat/completions`, {
-            method: 'POST',
-            headers: {
-                ...createHeaders(),
-                ...(stream && { 'Accept': 'text/event-stream' })
-            },
-            body: JSON.stringify(payload)
-        })
+        // 创建新的 AbortController
+        this.controller = new AbortController()
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    ...createHeaders(),
+                    ...(stream && { 'Accept': 'text/event-stream' }),
+                },
+                body: JSON.stringify(payload),
+                signal: this.controller.signal
+            })
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`)
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`)
+            }
+
+            if (stream) {
+                return response
+            }
+
+            return await response.json()
+        } catch (error: unknown) {
+            if (error instanceof Error && error.name === 'AbortError') {
+                console.log('请求被中止')
+            }
+            throw error
         }
-
-        if (stream) {
-            return response
-        }
-
-        return await response.json()
-    },
+    }
 
     async sendAsyncMessage(messages: Message[]): Promise<ChatResponse> {
         const settingsStore = useSettingsStore()
@@ -126,7 +146,7 @@ export const chatApi = {
         }
 
         return await response.json()
-    },
+    }
 
     async getAsyncResult(taskId: string): Promise<ChatResponse> {
         const response = await fetch(`${API_BASE_URL}/async-result/${taskId}`, {
@@ -140,4 +160,6 @@ export const chatApi = {
 
         return await response.json()
     }
-} 
+}
+
+export const chatApi = new ChatAPI() 
