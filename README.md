@@ -92,6 +92,9 @@ src/
 - 最大 Token - 限制回答长度
 - 流式响应 - 开启/关闭打字机效果
 
+## CICD
+项目部署网站为：http://139.155.143.204/
+
 ## 鸣谢
 
 感谢 [AIchat](https://github.com/wjc7jx/AIchat) 提供的代码参考。
