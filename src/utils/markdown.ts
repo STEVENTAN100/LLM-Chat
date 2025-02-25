@@ -9,6 +9,8 @@ const md = new MarkdownIt({
   html: true,
   linkify: true,
   typographer: true,
+  // breaks: false,        
+  // xhtmlOut: false,      
   highlight: function (str: string, lang: string): string {
     if (lang && hljs.getLanguage(lang)) {
       try {
@@ -29,6 +31,24 @@ const md = new MarkdownIt({
     return `<pre class="hljs"><code>${md.utils.escapeHtml(str)}</code></pre>`
   }
 })
+
+// 移除列表项标签中的换行
+md.renderer.rules.list_item_open = () => '<li>';
+
+// 移除列表项之间的空白，确保结束标签紧跟内容
+md.renderer.rules.list_item_close = () => '</li>';
+
+// 移除无序列表标签中的空白
+md.renderer.rules.bullet_list_open = () => '<ul>';
+
+// 移除无序列表之间的空白
+md.renderer.rules.bullet_list_close = () => '</ul>';
+
+// 移除有序列表标签中的空白
+md.renderer.rules.ordered_list_open = () => '<ol>';
+
+// 移除有序列表之间的空白
+md.renderer.rules.ordered_list_close = () => '</ol>';
 
 // 添加 LaTeX 支持
 const renderLatex = (tex: string, displayMode: boolean): string => {
