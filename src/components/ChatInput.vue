@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Delete, Position, Upload, Plus, Document } from '@element-plus/icons-vue'
+import { Delete, Position, Upload, Plus, Document, VideoPlay } from '@element-plus/icons-vue'
 import { useChatStore } from '../stores/chat.ts'
 import { ElInput, ElMessage, ElMessageBox } from 'element-plus'
 
@@ -9,11 +9,15 @@ const props = defineProps({
   loading: {
     type: Boolean,
     default: false
+  },
+  generating: {
+    type: Boolean,
+    default: false
   }
 })
 
 // 定义组件的事件
-const emit = defineEmits(['send', 'clear'])
+const emit = defineEmits(['send', 'clear', 'stop'])
 
 // 使用聊天存储
 const chatStore = useChatStore()
@@ -147,6 +151,11 @@ const adjustHeight = () => {
     }
   }
 }
+
+// 添加暂停处理函数
+const handleStop = () => {
+  emit('stop')
+}
 </script>
 
 <template>
@@ -196,13 +205,17 @@ const adjustHeight = () => {
           <el-button circle type="danger" :icon="Delete" @click="handleClear" />
         </el-tooltip>
 
-        <el-button type="primary" :loading="loading" @click="handleSend">
+        <el-button 
+          :type="generating ? 'danger' : 'primary'" 
+          :loading="loading && !generating" 
+          :class="{ 'pulsing-button': generating }"
+          @click="generating ? handleStop() : handleSend()">
           <template #icon>
             <el-icon>
-              <Position />
+              <component :is="generating ? VideoPlay : Position" />
             </el-icon>
           </template>
-          发送
+          {{ generating ? '暂停' : '发送' }}
         </el-button>
       </div>
     </div>
@@ -310,6 +323,22 @@ const adjustHeight = () => {
         transform: scale(0.8);
       }
     }
+  }
+}
+
+.pulsing-button {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
   }
 }
 </style>

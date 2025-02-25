@@ -154,6 +154,15 @@ const handleRegenerate = async (message: { id: number; timestamp: string; role: 
         }
     }
 }
+
+// 添加暂停处理函数
+const handleStop = () => {
+  // 中止当前的请求
+  chatApi.abortRequest()
+  // 重置状态
+  chatStore.currentGeneratingId = null
+  chatStore.isLoading = false
+}
 </script>
 
 <template>
@@ -183,7 +192,9 @@ const handleRegenerate = async (message: { id: number; timestamp: string; role: 
             </div>
 
             <!-- 聊天输入框 -->
-            <chat-input :loading="isLoading" @send="handleSend" @clear="handleClear" />
+            <chat-input :loading="isLoading" :generating="chatStore.currentGeneratingId !== null"
+                @send="handleSend" @clear="handleClear" @stop="handleStop" 
+            />
 
             <!-- 设置面板 -->
             <settings-panel v-model="showSettings" />
