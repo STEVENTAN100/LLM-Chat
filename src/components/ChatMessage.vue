@@ -331,6 +331,27 @@ const handleCopyAll = async () => {
       ul, ol {
         margin: 0.25rem 0;
         padding-left: 1.5rem;
+        
+        > li {
+          margin: 0 0 2rem 0;
+          
+          // 处理列表项内的段落
+          > p {
+            margin: 0;
+            display: inline; // 让段落内容保持在同一行
+            
+            // 处理列表项中的标题
+            > strong {
+              // margin-right: 0em;
+              margin-bottom: 0.5em;
+              display: inline-block;
+            }
+          }
+        }
+      }
+
+      ul > li {
+        margin: 0 0 0.5rem 0; 
       }
 
       table {
