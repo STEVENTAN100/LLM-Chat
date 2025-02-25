@@ -94,6 +94,7 @@ export const defaultModelOptions: ModelOption[] = [
     { label: 'DeepSeek-V3', value: 'deepseek-ai/DeepSeek-V3', type: 'plain' },
     { label: 'DeepSeek-R1', value: 'deepseek-ai/DeepSeek-R1', type: 'plain' },
     { label: 'DeepSeek-Janus-Pro-7B', value: 'deepseek-ai/Janus-Pro-7B', type: 'text2img' },
+    { label: 'InternVL2-26B', value: 'OpenGVLab/InternVL2-26B', type: 'visual' },
     { label: 'Qwen2.5-7B', value: 'Qwen/Qwen2.5-7B-Instruct', type: 'plain' },
     { label: 'Qwen2.5-Coder-7B', value: 'Qwen/Qwen2.5-Coder-7B-Instruct', type: 'plain' },
     { label: 'Qwen2-VL-72B', value: 'Qwen/Qwen2-VL-72B-Instruct', type: 'visual' },

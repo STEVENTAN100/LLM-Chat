@@ -2,7 +2,7 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import { Setting } from '@element-plus/icons-vue'
 import { useChatStore } from '../stores/chat.ts'
-import { useSettingsStore } from '../stores/settings.ts'
+import { useSettingsStore, useModelOptions } from '../stores/settings.ts'
 import { chatApi } from '../utils/api.ts'
 import { messageHandler, type SyncResponse } from '../utils/messageHandler.ts'
 import ChatMessage from '../components/ChatMessage.vue'
@@ -44,6 +44,62 @@ watch(() => chatStore.activeConversationId, () => {
     })
 })
 
+// 将文本消息转换为VLM消息，text -> VLMContentItem[]
+const convertTextToMessageContent = (text: string) => {
+  const content = [];  // VLMContentItem[]
+  const imageRegex = /!\[.*?\]\((data:image\/(png|jpg|jpeg);base64,[^)]+)\)/g;
+  let match;
+  let lastIndex = 0;
+  let firstTextExtracted = false; // 添加一个标志变量，用于标记是否已提取了第一段文本
+
+  while ((match = imageRegex.exec(text)) !== null) {
+    const imageUrl = match[1];
+    const imageStartIndex = match.index;
+
+    // 提取图片前的文本，确保不是空白字符
+    if (imageStartIndex > lastIndex && !firstTextExtracted) {
+      firstTextExtracted = true;
+      const textContent = text.substring(lastIndex, imageStartIndex).trim();
+      if (textContent && !/^\s*$/.test(textContent)) {
+        content.push({ type: "text" as const, text: textContent });
+      }
+    }
+
+    // 提取image_url(data url)
+    content.push({
+      type: "image_url" as const,
+      image_url: { url: imageUrl },
+    });
+
+    lastIndex = imageRegex.lastIndex;
+  }
+
+  // 若没有图片，则提取整个文本
+  if (!firstTextExtracted) {
+    content.push({ type: "text" as const, text: text });
+  }
+
+  return content;
+}
+
+// 将普通消息列表转换为VLM消息列表
+const createVLMMessage = () => {
+  // 获取当前会话的所有消息
+  return currentChatMessages.value.map(message => {
+    // 将每条消息转换为VLM格式
+    const content = message.onlyText ? [{ type: "text" as const, text: message.content }] : convertTextToMessageContent(message.content);
+    return {
+      role: message.role,
+      content: content
+    };
+  });
+}
+
+// 判断是否为纯文本消息
+const isOnlyText = (content: string) => {
+  return !content.match(/!\[.*?\]\((data:image\/(png|jpg|jpeg);base64,[^)]+)\)/g);
+}
+
 /**
  * 发送消息处理函数
  * @param {string} content 用户输入的消息内容
@@ -53,7 +109,7 @@ const handleSend = async (content: string) => {
 
     // if (isLoading.value) return
     // 添加用户消息和助理的空消息
-    chatStore.addMessage(messageHandler.formatMessage('user', content))
+    chatStore.addMessage(messageHandler.formatMessage('user', content), isOnlyText(content))
     chatStore.addMessage(messageHandler.formatMessage('assistant', ''))
     chatStore.isLoading = true
     // 将当前正在生成回复的对话ID设置为活跃对话的ID
@@ -63,13 +119,21 @@ const handleSend = async (content: string) => {
     try {
         // 获取设置并发送消息
         const settingsStore = useSettingsStore()
-        const response = await chatApi.sendMessage(
-            currentChatMessages.value.slice(0, -1).map(m => ({
-                role: m.role,
-                content: m.content
-            })),
-            settingsStore.streamResponse
-        )
+        const modelOptions = useModelOptions()
+        const modelOption = modelOptions.value.find(m => m.value === settingsStore.model)
+        let response: Response | SyncResponse
+        
+        if (modelOption?.type === 'visual'){
+            response = await chatApi.sendMessage(createVLMMessage().slice(0, -1), settingsStore.streamResponse)
+        } else {
+            response = await chatApi.sendMessage(
+                currentChatMessages.value.slice(0, -1).map(m => ({
+                    role: m.role,
+                    content: m.content
+                })),
+                settingsStore.streamResponse
+            )
+        }
 
         // 处理流式响应或同步响应
         if (settingsStore.streamResponse) {
@@ -126,7 +190,7 @@ const handleMessageDelete = (message: { id: number }) => {
     }
 }
 // 处理重新生成
-const handleRegenerate = async (message: { id: number; timestamp: string; role: "user" | "assistant"; content: string }) => {
+const handleRegenerate = async (message: { id: number; timestamp: string; role: "user" | "assistant"; content: string; onlyText: boolean }) => {
     console.log(message)
     console.log(chatStore.currentMessages)
 
@@ -157,11 +221,11 @@ const handleRegenerate = async (message: { id: number; timestamp: string; role: 
 
 // 添加暂停处理函数
 const handleStop = () => {
-  // 中止当前的请求
-  chatApi.abortRequest()
-  // 重置状态
-  chatStore.currentGeneratingId = null
-  chatStore.isLoading = false
+    // 中止当前的请求
+    chatApi.abortRequest()
+    // 重置状态
+    chatStore.currentGeneratingId = null
+    chatStore.isLoading = false
 }
 </script>
 
