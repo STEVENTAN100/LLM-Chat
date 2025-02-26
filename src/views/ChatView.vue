@@ -87,17 +87,12 @@ const createVLMMessage = () => {
   // 获取当前会话的所有消息
   return currentChatMessages.value.map(message => {
     // 将每条消息转换为VLM格式
-    const content = message.onlyText ? [{ type: "text" as const, text: message.content }] : convertTextToMessageContent(message.content);
+    const content = !message.hasImage ? [{ type: "text" as const, text: message.content }] : convertTextToMessageContent(message.content);
     return {
       role: message.role,
       content: content
     };
   });
-}
-
-// 判断是否为纯文本消息
-const isOnlyText = (content: string) => {
-  return !content.match(/!\[.*?\]\((data:image\/(png|jpg|jpeg);base64,[^)]+)\)/g);
 }
 
 /**
@@ -109,7 +104,7 @@ const handleSend = async (content: string) => {
 
     // if (isLoading.value) return
     // 添加用户消息和助理的空消息
-    chatStore.addMessage(messageHandler.formatMessage('user', content), isOnlyText(content))
+    chatStore.addMessage(messageHandler.formatMessage('user', content))
     chatStore.addMessage(messageHandler.formatMessage('assistant', ''))
     chatStore.isLoading = true
     // 将当前正在生成回复的对话ID设置为活跃对话的ID
@@ -190,7 +185,7 @@ const handleMessageDelete = (message: { id: number }) => {
     }
 }
 // 处理重新生成
-const handleRegenerate = async (message: { id: number; timestamp: string; role: "user" | "assistant"; content: string; onlyText: boolean }) => {
+const handleRegenerate = async (message: { id: number; timestamp: string; role: "user" | "assistant"; content: string }) => {
     console.log(message)
     console.log(chatStore.currentMessages)
 

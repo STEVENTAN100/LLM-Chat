@@ -35,6 +35,7 @@ interface ProcessStreamOptions {
 export const messageHandler = {
     formatMessage(role: 'user' | 'assistant', content: string): Message {
         const hasImage = content.includes('![') && content.includes('](data:image/')
+        // const hasImage = !!content.match(/!\[.*?\]\((data:image\/(png|jpg|jpeg);base64,[^)]+)\)/g)
 
         return {
             id: Date.now(),

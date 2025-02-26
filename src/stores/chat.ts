@@ -7,7 +7,7 @@ interface Message {
   timestamp: string
   role: 'user' | 'assistant'
   content: string
-  onlyText: boolean  // 是否是纯文本消息
+  hasImage?: boolean
 }
 
 // 定义Token计数类型
@@ -96,7 +96,7 @@ export const useChatStore = defineStore('chat', {
     },
 
     // 添加消息到当前会话
-    addMessage(message: Omit<Message, 'id' | 'timestamp' | 'onlyText'>, isOnlyText = true) {
+    addMessage(message: Omit<Message, 'id' | 'timestamp'>) {
       const conversation = this.conversations.find(
         conv => conv.id === this.activeConversationId
       )
@@ -104,7 +104,6 @@ export const useChatStore = defineStore('chat', {
         conversation.messages.push({
           id: Date.now(),
           timestamp: new Date().toISOString(),
-          onlyText: isOnlyText,
           ...message
         })
         conversation.updatedAt = new Date().toISOString()
