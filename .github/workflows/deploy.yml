@@ -3,7 +3,7 @@ name: 打包应用并上传腾讯云
 on:
   push:
     branches:
-      - main  # 在main分支推送时触发
+      - master  # 在master分支推送时触发
       - test_ly  # 在test_ly分支推送时触发
 
 jobs:
