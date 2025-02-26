@@ -134,13 +134,13 @@ const handleSend = async (content: string) => {
         if (settingsStore.streamResponse) {
             // 流式处理，并更新消息和token计数
             await messageHandler.processStreamResponse(response as Response, {
-                updateMessage: (content) => chatStore.updateLastMessage(content),
+                updateMessage: (content, reasoning_content) => chatStore.updateLastMessage(content, reasoning_content),
                 updateTokenCount: (usage) => chatStore.updateTokenCount(usage)
             });
         } else {
             // 同步处理，并更新消息和token计数
-            const result = await messageHandler.processSyncResponse(response as SyncResponse, (content) => {
-                chatStore.updateLastMessage(content)
+            const result = await messageHandler.processSyncResponse(response as SyncResponse, (content, reasoning_content) => {
+                chatStore.updateLastMessage(content, reasoning_content)
             });
             if (result.usage) {
                 chatStore.updateTokenCount(result.usage)
@@ -148,7 +148,7 @@ const handleSend = async (content: string) => {
         }
     } catch (error) {
         console.error('发送消息失败:', error)
-        chatStore.updateLastMessage('抱歉，发生了错误，请稍后重试。')
+        chatStore.updateLastMessage('抱歉，发生了错误，请稍后重试。', '')
     } finally {
         // 重置正在生成回复的对话ID为null,表示当前没有对话在等待AI响应
         chatStore.currentGeneratingId = null
@@ -185,7 +185,7 @@ const handleMessageDelete = (message: { id: number }) => {
     }
 }
 // 处理重新生成
-const handleRegenerate = async (message: { id: number; timestamp: string; role: "user" | "assistant"; content: string }) => {
+const handleRegenerate = async (message: { id: number; timestamp: string; role: "user" | "assistant"; content: string; reasoning_content: string }) => {
     console.log(message)
     console.log(chatStore.currentMessages)
 

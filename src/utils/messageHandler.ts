@@ -3,6 +3,7 @@ interface Message {
     id: number;
     role: 'user' | 'assistant';
     content: string;
+    reasoning_content: string;
     hasImage: boolean;
     loading: boolean;
 }
@@ -15,20 +16,20 @@ interface TokenUsage {
 
 interface StreamResponse {
     choices: Array<{
-        delta: { content?: string; };
+        delta: { content?: string; reasoning_content?: string };
     }>;
     usage?: TokenUsage;
 }
 
 export interface SyncResponse {
     choices: Array<{
-        message?: { content: string; };
+        message?: { content: string; reasoning_content: string };
     }>;
     usage?: TokenUsage;
 }
 
 interface ProcessStreamOptions {
-    updateMessage: (content: string) => void;
+    updateMessage: (content: string, reasoning_content: string) => void;
     updateTokenCount: (usage: TokenUsage) => void;
 }
 
@@ -42,6 +43,7 @@ export const messageHandler = {
             role,
             content,
             hasImage,
+            reasoning_content: '',
             loading: false,
         };
     },
@@ -57,6 +59,7 @@ export const messageHandler = {
     ): Promise<void> {
         try {
             let fullResponse = '';
+            let fullReasoningResponse = '';
             const reader = response.body!.getReader();
             const decoder = new TextDecoder();
 
@@ -81,10 +84,12 @@ export const messageHandler = {
 
                         try {
                             const jsData = JSON.parse(jsonStr) as StreamResponse;
-                            if (jsData.choices[0].delta.content) {
-                                const content = jsData.choices[0].delta.content;
+                            if (jsData.choices[0].delta.content || jsData.choices[0].delta.reasoning_content) {
+                                const content = jsData.choices[0].delta.content || '';
+                                const reasoning_content = jsData.choices[0].delta.reasoning_content || '';
                                 fullResponse += content;
-                                updateMessage(fullResponse);
+                                fullReasoningResponse += reasoning_content;
+                                updateMessage(fullResponse, fullReasoningResponse);
                             }
 
                             if (jsData.usage) {
@@ -104,18 +109,20 @@ export const messageHandler = {
 
     async processSyncResponse(
         response: SyncResponse,
-        onUpdate: (content: string) => void
-    ): Promise<{ content: string; usage: TokenUsage | null }> {
+        onUpdate: (content: string, reasoning_content: string) => void
+    ): Promise<{ content: string; reasoning_content: string; usage: TokenUsage | null }> {
         try {
             if (!response || !response.choices) {
                 throw new Error('无效的响应格式');
             }
 
             const content = response.choices[0]?.message?.content || '';
-            onUpdate(content);
+            const reasoning_content = response.choices[0]?.message?.reasoning_content || '';
+            onUpdate(content, reasoning_content);
 
             return {
                 content,
+                reasoning_content,
                 usage: response.usage || null
             };
         } catch (error) {
