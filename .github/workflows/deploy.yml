@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main  # 在main分支推送时触发
+      - test_ly  # 在test_ly分支推送时触发
 
 jobs:
   # 构建、测试、Lint、TypeScript检查
