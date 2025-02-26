@@ -16,7 +16,10 @@ interface TokenUsage {
 
 interface StreamResponse {
     choices: Array<{
-        delta: { content?: string; reasoning_content?: string };
+        delta: {
+            content?: string | null;
+            reasoning_content?: string | null;
+        };
     }>;
     usage?: TokenUsage;
 }
@@ -63,64 +66,93 @@ export const messageHandler = {
         response: Response,
         { updateMessage, updateTokenCount }: ProcessStreamOptions
     ): Promise<void> {
+        let fullResponse = '';
+        let fullReasoningResponse = '';
+        const tokenAccumulator: TokenAccumulator = {
+            prompt_tokens: 0,
+            completion_tokens: 0,
+            total_tokens: 0
+        };
+
+        const reader = response.body!.getReader();
+        const decoder = new TextDecoder();
+
         try {
-            let fullResponse = '';
-            let fullReasoningResponse = '';
-            const tokenAccumulator: TokenAccumulator = {
-                prompt_tokens: 0,
-                completion_tokens: 0,
-                total_tokens: 0
-            };
-
-            const reader = response.body!.getReader();
-            const decoder = new TextDecoder();
-
             while (true) {
                 const { done, value } = await reader.read();
+                
+                // 处理流结束的情况
                 if (done) {
                     console.log('流式响应完成');
                     updateTokenCount(tokenAccumulator);
                     break;
                 }
 
-                const chunk = decoder.decode(value);
-                const lines = chunk.split('\n').filter(line => line.trim() !== '');
+                // 处理数据块
+                const lines = decoder.decode(value)
+                    .split('\n')
+                    .filter(line => line.trim() !== '')
+                    .filter(line => line.startsWith('data: '));
 
                 for (const line of lines) {
-                    if (line.includes('data: ')) {
-                        const jsonStr = line.replace('data: ', '');
-                        if (jsonStr === '[DONE]') {
-                            console.log('流式响应完成，读取完毕');
-                            continue;
-                        }
+                    const jsonStr = line.replace('data: ', '');
+                    if (jsonStr === '[DONE]') continue;
 
-                        try {
-                            const jsData = JSON.parse(jsonStr) as StreamResponse;
-                            if (jsData.choices[0].delta.content || jsData.choices[0].delta.reasoning_content) {
-                                const content = jsData.choices[0].delta.content || '';
-                                const reasoning_content = jsData.choices[0].delta.reasoning_content || '';
-                                fullResponse += content;
-                                fullReasoningResponse += reasoning_content;
+                    try {
+                        const jsData = JSON.parse(jsonStr) as StreamResponse;
+                        const delta = jsData.choices[0]?.delta;
+                        
+                        if (delta) {
+                            let hasUpdate = false;
+                            
+                            // 严格检查 content
+                            if (delta.content !== undefined && delta.content !== null) {
+                                fullResponse += delta.content;
+                                hasUpdate = true;
+                            }
+                            
+                            // 严格检查 reasoning_content
+                            if (delta.reasoning_content !== undefined && delta.reasoning_content !== null) {
+                                fullReasoningResponse += delta.reasoning_content;
+                                hasUpdate = true;
+                            }
+                            
+                            // 只在有实际更新时才调用更新函数
+                            if (hasUpdate) {
                                 updateMessage(fullResponse, fullReasoningResponse);
                             }
-
-                            if (jsData.usage) {
-                                tokenAccumulator.prompt_tokens = jsData.usage.prompt_tokens || 0;
-                                tokenAccumulator.completion_tokens = jsData.usage.completion_tokens || 0;
-                                tokenAccumulator.total_tokens = jsData.usage.total_tokens || 0;
-                            }
-                        } catch (e) {
-                            console.error('解析JSON失败:', e);
                         }
+
+                        // 更新token统计
+                        if (jsData.usage) {
+                            Object.assign(tokenAccumulator, {
+                                prompt_tokens: jsData.usage.prompt_tokens || tokenAccumulator.prompt_tokens,
+                                completion_tokens: jsData.usage.completion_tokens || tokenAccumulator.completion_tokens,
+                                total_tokens: jsData.usage.total_tokens || tokenAccumulator.total_tokens
+                            });
+                        }
+                    } catch (e) {
+                        console.error('解析JSON失败:', e);
+                        console.error('问题数据:', jsonStr);
                     }
                 }
             }
         } catch (error) {
-            if(error instanceof Error && error.name === 'AbortError') {
-                console.log('流式响应被中止');
+            // 处理中止和其他错误
+            if (error instanceof Error) {
+                const isAborted = error.name === 'AbortError';
+                if (isAborted) {
+                    console.log('流式响应被中止');
+                    // 确保在中止时也更新token计数
+                    updateTokenCount(tokenAccumulator);
+                } else {
+                    console.error('流处理错误:', error);
+                }
             }
-            console.error('流处理错误:', error);
             throw error;
+        } finally {
+            // 确保读取器被正确关闭
+            reader.releaseLock();
         }
     },
 
