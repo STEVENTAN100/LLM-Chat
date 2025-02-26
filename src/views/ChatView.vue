@@ -100,7 +100,7 @@ const createVLMMessage = () => {
  * @param {string} content 用户输入的消息内容
  */
 const handleSend = async (content: string) => {
-    console.log('发送消息', content)
+    console.log('发送消息')
 
     // if (isLoading.value) return
     // 添加用户消息和助理的空消息
@@ -186,11 +186,11 @@ const handleMessageDelete = (message: { id: number }) => {
 }
 // 处理重新生成
 const handleRegenerate = async (message: { id: number; timestamp: string; role: "user" | "assistant"; content: string; reasoning_content: string }) => {
-    console.log(message)
-    console.log(chatStore.currentMessages)
+    // console.log(message)
+    // console.log(chatStore.currentMessages)
 
     const index = chatStore.currentMessages.findIndex(m => m.id === message.id && m.role === "assistant")
-    console.log(index)
+    // console.log(index)
     if (index !== -1 && index > 0) {
         // 获取上一条用户消息
         const userMessage = chatStore.currentMessages[index - 1]
@@ -201,7 +201,7 @@ const handleRegenerate = async (message: { id: number; timestamp: string; role: 
 
         chatStore.isLoading = true
         try {
-            console.log(userMessage.content)
+            // console.log(userMessage.content)
             // 重新发送请求
             await handleSend(userMessage.content)
         } catch (error) {
@@ -218,12 +218,6 @@ const handleRegenerate = async (message: { id: number; timestamp: string; role: 
 const handleStop = () => {
     // 中止当前的请求
     chatApi.abortRequest()
-    
-    // // 获取当前会话最后一条消息的token使用情况
-    // const lastMessage = chatStore.currentMessages[chatStore.currentMessages.length - 1]
-    // if (lastMessage && lastMessage.tokenUsage) {
-    //     chatStore.updateTokenCount(lastMessage.tokenUsage)
-    // }
     
     // 重置状态
     chatStore.currentGeneratingId = null

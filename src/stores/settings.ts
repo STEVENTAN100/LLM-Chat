@@ -98,5 +98,4 @@ export const defaultModelOptions: ModelOption[] = [
     { label: 'Qwen2.5-Coder-7B', value: 'Qwen/Qwen2.5-Coder-7B-Instruct', type: 'plain' },
     { label: 'Qwen2-VL-72B', value: 'Qwen/Qwen2-VL-72B-Instruct', type: 'visual' },
     { label: 'QVQ-72B-Preview', value: 'Qwen/QVQ-72B-Preview', type: 'visual' },
-    { label: 'Meta-Llama-3.1-8B', value: 'meta-llama/Meta-Llama-3.1-8B-Instruct', type: 'plain' },
 ]
