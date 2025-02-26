@@ -218,6 +218,13 @@ const handleRegenerate = async (message: { id: number; timestamp: string; role: 
 const handleStop = () => {
     // 中止当前的请求
     chatApi.abortRequest()
+    
+    // // 获取当前会话最后一条消息的token使用情况
+    // const lastMessage = chatStore.currentMessages[chatStore.currentMessages.length - 1]
+    // if (lastMessage && lastMessage.tokenUsage) {
+    //     chatStore.updateTokenCount(lastMessage.tokenUsage)
+    // }
+    
     // 重置状态
     chatStore.currentGeneratingId = null
     chatStore.isLoading = false
