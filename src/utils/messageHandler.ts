@@ -33,6 +33,12 @@ interface ProcessStreamOptions {
     updateTokenCount: (usage: TokenUsage) => void;
 }
 
+interface TokenAccumulator {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+}
+
 export const messageHandler = {
     formatMessage(role: 'user' | 'assistant', content: string): Message {
         const hasImage = content.includes('![') && content.includes('](data:image/')
@@ -60,14 +66,20 @@ export const messageHandler = {
         try {
             let fullResponse = '';
             let fullReasoningResponse = '';
+            const tokenAccumulator: TokenAccumulator = {
+                prompt_tokens: 0,
+                completion_tokens: 0,
+                total_tokens: 0
+            };
+
             const reader = response.body!.getReader();
             const decoder = new TextDecoder();
 
-            // ... existing code ...
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) {
                     console.log('流式响应完成');
+                    updateTokenCount(tokenAccumulator);
                     break;
                 }
 
@@ -93,7 +105,9 @@ export const messageHandler = {
                             }
 
                             if (jsData.usage) {
-                                updateTokenCount(jsData.usage);
+                                tokenAccumulator.prompt_tokens = jsData.usage.prompt_tokens || 0;
+                                tokenAccumulator.completion_tokens = jsData.usage.completion_tokens || 0;
+                                tokenAccumulator.total_tokens = jsData.usage.total_tokens || 0;
                             }
                         } catch (e) {
                             console.error('解析JSON失败:', e);
@@ -102,6 +116,9 @@ export const messageHandler = {
                 }
             }
         } catch (error) {
+            if(error instanceof Error && error.name === 'AbortError') {
+                console.log('流式响应被中止');
+            }
             console.error('流处理错误:', error);
             throw error;
         }
