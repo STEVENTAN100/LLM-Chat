@@ -40,7 +40,9 @@ jobs:
 
       # 打包应用
       - name: 打包应用
-        run: npm run build
+        run: |
+          npm update
+          npm run build
 
   # 发布到腾讯云
   deploy:
