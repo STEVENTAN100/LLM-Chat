@@ -7,7 +7,8 @@ interface Message {
   timestamp: string
   role: 'user' | 'assistant'
   content: string
-  onlyText: boolean  // 是否是纯文本消息
+  reasoning_content: string
+  hasImage?: boolean
 }
 
 // 定义Token计数类型
@@ -96,7 +97,7 @@ export const useChatStore = defineStore('chat', {
     },
 
     // 添加消息到当前会话
-    addMessage(message: Omit<Message, 'id' | 'timestamp' | 'onlyText'>, isOnlyText = true) {
+    addMessage(message: Omit<Message, 'id' | 'timestamp'>) {
       const conversation = this.conversations.find(
         conv => conv.id === this.activeConversationId
       )
@@ -104,7 +105,6 @@ export const useChatStore = defineStore('chat', {
         conversation.messages.push({
           id: Date.now(),
           timestamp: new Date().toISOString(),
-          onlyText: isOnlyText,
           ...message
         })
         conversation.updatedAt = new Date().toISOString()
@@ -112,7 +112,8 @@ export const useChatStore = defineStore('chat', {
     },
 
     // 更新正在生成回答的会话的最后一条消息
-    updateLastMessage(content: string) {
+    updateLastMessage(content: string, reasoning_content: string) {
+      console.log('更新正在生成回答的会话的最后一条消息', content, reasoning_content)
       const conversation = this.conversations.find(
         conv => conv.id === this.currentGeneratingId
       )
@@ -120,6 +121,7 @@ export const useChatStore = defineStore('chat', {
         const lastMessage = conversation.messages[conversation.messages.length - 1]
         if (lastMessage) {
           lastMessage.content = content
+          lastMessage.reasoning_content = reasoning_content
           conversation.updatedAt = new Date().toISOString()
         }
       }
