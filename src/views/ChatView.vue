@@ -95,30 +95,14 @@ const createVLMMessage = () => {
   });
 }
 
-/**
- * 发送消息处理函数
- * @param {string} content 用户输入的消息内容
- */
-const handleSend = async (content: string) => {
-    console.log('发送消息')
-
-    // if (isLoading.value) return
-    // 添加用户消息和助理的空消息
-    chatStore.addMessage(messageHandler.formatMessage('user', content))
-    chatStore.addMessage(messageHandler.formatMessage('assistant', ''))
-    chatStore.isLoading = true
-    // 将当前正在生成回复的对话ID设置为活跃对话的ID
-    // 这样可以追踪哪个对话正在等待AI响应
-    chatStore.currentGeneratingId = chatStore.activeConversationId
-
+// 发送LLM/VLM消息
+const sendMessage = async (modelType: string) => {
+    console.log('发送LLM/VLM消息')
     try {
-        // 获取设置并发送消息
         const settingsStore = useSettingsStore()
-        const modelOptions = useModelOptions()
-        const modelOption = modelOptions.value.find(m => m.value === settingsStore.model)
         let response: Response | SyncResponse
         
-        if (modelOption?.type === 'visual'){
+        if (modelType === 'visual'){
             response = await chatApi.sendMessage(createVLMMessage().slice(0, -1), settingsStore.streamResponse)
         } else {
             response = await chatApi.sendMessage(
@@ -154,7 +138,69 @@ const handleSend = async (content: string) => {
         chatStore.currentGeneratingId = null
         chatStore.isLoading = false
     }
+}
 
+// 发送T2I消息
+const sendT2IMessage = async () => {
+    console.log('发送T2I消息')
+    try {
+        // 获取最后一条用户消息的内容作为提示词
+        const userMessage = currentChatMessages.value.slice(-2)[0]
+        if (!userMessage || userMessage.role !== 'user') {
+            throw new Error('无效的用户消息')
+        }
+
+        // 提取提示词（如果消息以"画"或"/image"开头，则去掉这些前缀）
+        const prompt = userMessage.content
+            .replace(/^画\s*|^\/image\s+/i, '')
+            .trim()
+
+        // 调用文生图API
+        const response = await chatApi.sendT2IMessage(prompt)
+        
+        // 处理图片响应
+        await messageHandler.processT2IResponse(response, (content) => {
+            chatStore.updateLastMessage(content)
+        })
+
+    } catch (error) {
+        console.error('图片生成失败:', error)
+        chatStore.updateLastMessage('抱歉，图片生成失败，请稍后重试。')
+    } finally {
+        // 重置正在生成回复的对话ID为null,表示当前没有对话在等待AI响应
+        chatStore.currentGeneratingId = null
+        chatStore.isLoading = false
+    }
+}
+
+/**
+ * 发送消息处理函数
+ * @param {string} content 用户输入的消息内容
+ */
+const handleSend = async (content: string) => {
+    console.log('发送消息')
+
+    // if (isLoading.value) return
+    // 添加用户消息和助理的空消息
+    chatStore.addMessage(messageHandler.formatMessage('user', content))
+    chatStore.addMessage(messageHandler.formatMessage('assistant', ''))
+    chatStore.isLoading = true
+    // 将当前正在生成回复的对话ID设置为活跃对话的ID
+    // 这样可以追踪哪个对话正在等待AI响应
+    chatStore.currentGeneratingId = chatStore.activeConversationId
+
+    // 获取设置并发送消息
+    const settingsStore = useSettingsStore()
+    const modelOptions = useModelOptions()
+    const modelOption = modelOptions.value.find(m => m.value === settingsStore.model)
+    const modelType = modelOption?.type
+
+    // 根据模型类型发送消息
+    if (modelType === 'plain' || modelType === 'visual'){
+        await sendMessage(modelType)
+    } else {
+        await sendT2IMessage()
+    }
 }
 
 /**
@@ -185,7 +231,7 @@ const handleMessageDelete = (message: { id: number }) => {
     }
 }
 // 处理重新生成
-const handleRegenerate = async (message: { id: number; timestamp: string; role: "user" | "assistant"; content: string; reasoning_content: string }) => {
+const handleRegenerate = async (message: { id: number; timestamp: string; role: "user" | "assistant"; content: string; reasoning_content?: string }) => {
     // console.log(message)
     // console.log(chatStore.currentMessages)
 

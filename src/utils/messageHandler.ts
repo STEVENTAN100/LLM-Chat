@@ -3,7 +3,7 @@ interface Message {
     id: number;
     role: 'user' | 'assistant';
     content: string;
-    reasoning_content: string;
+    reasoning_content?: string;
     hasImage: boolean;
     loading: boolean;
 }
@@ -26,13 +26,16 @@ interface StreamResponse {
 
 export interface SyncResponse {
     choices: Array<{
-        message?: { content: string; reasoning_content: string };
+        message?: { 
+            content: string;
+            reasoning_content?: string;
+        };
     }>;
     usage?: TokenUsage;
 }
 
 interface ProcessStreamOptions {
-    updateMessage: (content: string, reasoning_content: string) => void;
+    updateMessage: (content: string, reasoning_content?: string) => void;
     updateTokenCount: (usage: TokenUsage) => void;
 }
 
@@ -42,7 +45,14 @@ interface TokenAccumulator {
     total_tokens: number;
 }
 
+export interface SyncImageResponse {
+    images: Array<{
+        url: string;
+    }>;
+}
+
 export const messageHandler = {
+    // 格式化消息
     formatMessage(role: 'user' | 'assistant', content: string): Message {
         const hasImage = content.includes('![') && content.includes('](data:image/')
         // const hasImage = !!content.match(/!\[.*?\]\((data:image\/(png|jpg|jpeg);base64,[^)]+)\)/g)
@@ -52,9 +62,18 @@ export const messageHandler = {
             role,
             content,
             hasImage,
-            reasoning_content: '',
             loading: false,
         };
+    },    
+
+    // 格式化图片消息
+    formatImageMessage(role: 'user' | 'assistant', images: Array<{url: string}>): Message {
+        // 将所有图片URL转换为Markdown格式
+        const content = images
+            .map(img => `![generated image](${img.url})`)
+            .join('\n\n');
+        
+        return this.formatMessage(role, content)
     },
 
     /**
@@ -158,8 +177,8 @@ export const messageHandler = {
 
     async processSyncResponse(
         response: SyncResponse,
-        onUpdate: (content: string, reasoning_content: string) => void
-    ): Promise<{ content: string; reasoning_content: string; usage: TokenUsage | null }> {
+        onUpdate: (content: string, reasoning_content?: string) => void
+    ): Promise<{ content: string; reasoning_content?: string; usage: TokenUsage | null }> {
         try {
             if (!response || !response.choices) {
                 throw new Error('无效的响应格式');
@@ -176,6 +195,29 @@ export const messageHandler = {
             };
         } catch (error) {
             console.error('同步响应处理错误:', error);
+            throw error;
+        }
+    },
+
+    async processT2IResponse(
+        response: SyncImageResponse,
+        onUpdate: (content: string) => void
+    ): Promise<{ content: string }> {
+        try {
+            if (!response || !response.images || response.images.length === 0) {
+                throw new Error('无效的图片生成响应');
+            }
+
+            // 使用 formatImageMessage 处理图片 URL
+            const imageMessage = this.formatImageMessage('assistant', response.images);
+            const content = imageMessage.content;
+            
+            // 更新消息内容
+            onUpdate(content);
+
+            return { content };
+        } catch (error) {
+            console.error('图片响应处理错误:', error);
             throw error;
         }
     }

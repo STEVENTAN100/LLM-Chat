@@ -18,7 +18,7 @@ export interface Message {
     content: string | VLMContentItem[]
 }
 
-// 定义API请求负载接口
+// 定义LLM/VLM API请求负载接口
 interface ChatPayload {
     model: string
     messages: Message[]
@@ -43,12 +43,12 @@ interface ChatPayload {
     }>
 }
 
-// 定义响应接口
+// 定义LLM/VLM API响应接口
 interface ChatResponse {
     choices: Array<{
         message?: {
             content: string
-            reasoning_content: string
+            reasoning_content?: string
         }
     }>
     usage?: {
@@ -56,6 +56,23 @@ interface ChatResponse {
         completion_tokens: number
         total_tokens: number
     }
+}
+
+// 定义文生图 API请求负载接口
+interface ImageGenerationPayload {
+    model: string
+    prompt: string
+}
+
+// 定义文生图 API响应接口
+interface ImageGenerationResponse {
+    images: Array<{
+        url: string
+    }>
+    timings: {
+        inference: number
+    }
+    seed: number
 }
 
 // 创建请求头
@@ -169,6 +186,33 @@ class ChatAPI {
         }
 
         return await response.json()
+    }
+
+    // 文生图方法
+    async sendT2IMessage(prompt: string): Promise<ImageGenerationResponse> {
+        const settingsStore = useSettingsStore()
+        
+        const payload: ImageGenerationPayload = {
+            model: settingsStore.model,
+            prompt: prompt
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/images/generations`, {
+                method: 'POST',
+                headers: createHeaders(),
+                body: JSON.stringify(payload)
+            })
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`)
+            }
+
+            return await response.json()
+        } catch (error) {
+            console.error('生成图片失败:', error)
+            throw error
+        }
     }
 }
 
