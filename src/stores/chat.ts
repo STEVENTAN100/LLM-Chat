@@ -112,7 +112,7 @@ export const useChatStore = defineStore('chat', {
     },
 
     // 更新正在生成回答的会话的最后一条消息
-    updateLastMessage(content: string, reasoning_content: string) {
+    updateLastMessage(content: string, reasoning_content?: string) {
       console.log('更新正在生成回答的会话的最后一条消息')
       const conversation = this.conversations.find(
         conv => conv.id === this.currentGeneratingId
