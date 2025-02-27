@@ -198,8 +198,10 @@ const handleSend = async (content: string) => {
     // 根据模型类型发送消息
     if (modelType === 'plain' || modelType === 'visual'){
         await sendMessage(modelType)
-    } else {
+    } else if (modelType === 'text2img'){
         await sendT2IMessage()
+    } else {
+        throw new Error('无效的模型类型')
     }
 }
 
