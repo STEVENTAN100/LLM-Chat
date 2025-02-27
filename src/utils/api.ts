@@ -198,8 +198,8 @@ class ChatAPI {
         const payload: ImageGenerationPayload = {
             model: settingsStore.model,
             prompt: prompt,
-            image_size: '1024x1024',
-            num_inference_steps: 20,
+            image_size: settingsStore.t2iConfig.imageSize,
+            num_inference_steps: settingsStore.t2iConfig.inferenceSteps,
             seed: Math.floor(Math.random() * 1000000)
         }
 
