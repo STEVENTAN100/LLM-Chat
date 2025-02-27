@@ -62,6 +62,9 @@ interface ChatResponse {
 interface ImageGenerationPayload {
     model: string
     prompt: string
+    image_size?: string
+    num_inference_steps?: number
+    seed?: number
 }
 
 // 定义文生图 API响应接口
@@ -194,7 +197,10 @@ class ChatAPI {
         
         const payload: ImageGenerationPayload = {
             model: settingsStore.model,
-            prompt: prompt
+            prompt: prompt,
+            image_size: '1024x1024',
+            num_inference_steps: 20,
+            seed: Math.floor(Math.random() * 1000000)
         }
 
         try {
