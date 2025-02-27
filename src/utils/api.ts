@@ -78,6 +78,19 @@ interface ImageGenerationResponse {
     seed: number
 }
 
+// 自定义错误类，包含HTTP状态码和响应信息
+export class ApiError extends Error {
+  statusCode: number;
+  responseMessage: string;
+
+  constructor(statusCode: number, message: string, responseMessage: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.statusCode = statusCode;
+    this.responseMessage = responseMessage;
+  }
+}
+
 // 创建请求头
 const createHeaders = (): Record<string, string> => {
     const settingsStore = useSettingsStore()
@@ -95,6 +108,31 @@ class ChatAPI {
             this.controller.abort()
             this.controller = null
         }
+    }
+
+    // 通用错误处理方法
+    private async handleApiError(response: Response): Promise<never> {
+        const statusCode = response.status;
+        const statusMessage = response.statusText;
+        let responseMessage = '';
+        
+        try {
+            const responseText = await response.text();
+            if (!responseText) {
+                responseMessage = statusMessage;
+            } else {
+                try {
+                    const errorData = JSON.parse(responseText);
+                    responseMessage = errorData.message || responseText;
+                } catch {
+                    responseMessage = responseText;
+                }
+            }
+        } catch {
+            responseMessage = statusMessage;
+        }
+        
+        throw new ApiError(statusCode, statusMessage, responseMessage);
     }
 
     async sendMessage(messages: Message[], stream = false): Promise<Response | ChatResponse> {
@@ -139,7 +177,8 @@ class ChatAPI {
             })
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`)
+                // throw new Error(`HTTP error! status: ${response.status}`)
+                return this.handleApiError(response);
             }
 
             if (stream) {
@@ -211,7 +250,8 @@ class ChatAPI {
             })
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`)
+                // throw new Error(`HTTP error! status: ${response.status}`)
+                return this.handleApiError(response);
             }
 
             return await response.json()

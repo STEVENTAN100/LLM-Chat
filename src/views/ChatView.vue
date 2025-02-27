@@ -3,13 +3,14 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { Setting } from '@element-plus/icons-vue'
 import { useChatStore } from '../stores/chat.ts'
 import { useSettingsStore, useModelOptions } from '../stores/settings.ts'
-import { chatApi } from '../utils/api.ts'
+import { chatApi, ApiError } from '../utils/api.ts'
 import { messageHandler, type SyncResponse } from '../utils/messageHandler.ts'
 import ChatMessage from '../components/ChatMessage.vue'
 import ChatInput from '../components/ChatInput.vue'
 import SettingsPanel from '../components/SettingsPanel.vue'
 import SideBar from '../components/SideBar.vue'
 import SearchBar from '../components/SearchBar.vue'
+import { ElMessage } from 'element-plus'
 
 // 初始化聊天存储
 const chatStore = useChatStore()
@@ -132,7 +133,30 @@ const sendMessage = async (modelType: string) => {
         }
     } catch (error) {
         console.error('发送消息失败:', error)
-        chatStore.updateLastMessage('抱歉，发生了错误，请稍后重试。', '')
+        
+        // 错误消息格式化逻辑
+        let errorMessage = '抱歉，发生了错误，请稍后重试。'
+        
+        if (error instanceof ApiError) {
+            // 使用 ElMessage 显示错误信息，使用 HTML 标签添加样式
+            ElMessage.error({
+                dangerouslyUseHTMLString: true, // 允许使用 HTML
+                message: `
+                    <div style="font-size: 14px;">
+                        <span style="color: #F56C6C; font-weight: bold;">${error.statusCode}</span>
+                        <span style="color: #F56C6C; font-weight: bold;"> ${error.message}</span>
+                        <br>
+                        <span style="color: #909399; font-size: 13px;">${error.responseMessage || '未知错误'}</span>
+                    </div>
+                `,
+                duration: 5000,
+                showClose: true
+            })
+        } else {
+            // ElMessage.error('发送消息失败，请稍后重试')
+        }
+        
+        chatStore.updateLastMessage(errorMessage, '')
     } finally {
         // 重置正在生成回复的对话ID为null,表示当前没有对话在等待AI响应
         chatStore.currentGeneratingId = null
@@ -165,7 +189,29 @@ const sendT2IMessage = async () => {
 
     } catch (error) {
         console.error('图片生成失败:', error)
-        chatStore.updateLastMessage('抱歉，图片生成失败，请稍后重试。')
+        
+        let errorMessage = '抱歉，图片生成失败，请稍后重试。'
+        
+        if (error instanceof ApiError) {
+            // 使用 ElMessage 显示错误信息，使用 HTML 标签添加样式
+            ElMessage.error({
+                dangerouslyUseHTMLString: true, // 允许使用 HTML
+                message: `
+                    <div style="font-size: 14px;">
+                        <span style="color: #F56C6C; font-weight: bold;">${error.statusCode}</span>
+                        <span style="color: #F56C6C; font-weight: bold;"> ${error.message}</span>
+                        <br>
+                        <span style="color: #909399; font-size: 13px;">${error.responseMessage || '未知错误'}</span>
+                    </div>
+                `,
+                duration: 5000,
+                showClose: true
+            })
+        } else {
+            ElMessage.error('图片生成失败，请稍后重试')
+        }
+        
+        chatStore.updateLastMessage(errorMessage)
     } finally {
         // 重置正在生成回复的对话ID为null,表示当前没有对话在等待AI响应
         chatStore.currentGeneratingId = null
@@ -198,8 +244,10 @@ const handleSend = async (content: string) => {
     // 根据模型类型发送消息
     if (modelType === 'plain' || modelType === 'visual'){
         await sendMessage(modelType)
-    } else {
+    } else if (modelType === 'text2img'){
         await sendT2IMessage()
+    } else {
+        throw new Error('无效的模型类型')
     }
 }
 

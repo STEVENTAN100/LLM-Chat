@@ -35,7 +35,7 @@ export const useSettingsStore = defineStore('settings', {
         isDarkMode: false,
         temperature: 0.7,
         maxTokens: 1000,
-        model: 'DeepSeek-V3',
+        model: 'deepseek-ai/DeepSeek-V3',
         apiKey: '',
         streamResponse: true,
         topP: 0.7,

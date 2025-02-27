@@ -32,6 +32,7 @@ interface Conversation {
   messages: Message[]
   createdAt: string
   updatedAt: string
+  tokenCount: TokenCount
 }
 
 // 定义Store的状态类型
@@ -40,7 +41,6 @@ interface ChatState {
   activeConversationId: string | null  // 当前展示会话ID
   isLoading: boolean
   currentGeneratingId: string | null  // 当前正在生成回答的会话ID
-  tokenCount: TokenCount
   conversationCounter: number  // 会话计数器
 }
 
@@ -50,11 +50,6 @@ export const useChatStore = defineStore('chat', {
     activeConversationId: null,
     isLoading: false,
     currentGeneratingId: null,
-    tokenCount: {
-      total: 0,
-      prompt: 0,
-      completion: 0
-    },
     conversationCounter: 0  
   }),
 
@@ -67,7 +62,12 @@ export const useChatStore = defineStore('chat', {
         title: `新会话 ${this.conversationCounter}`,
         messages: [],
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        tokenCount: {
+          total: 0,
+          prompt: 0,
+          completion: 0
+        }
       }
       this.conversations.push(conversation)
       this.activeConversationId = conversation.id
@@ -128,14 +128,19 @@ export const useChatStore = defineStore('chat', {
     },
 
     updateTokenCount(usage: TokenUsage) {
-      if (usage.prompt_tokens) {
-        this.tokenCount.prompt += usage.prompt_tokens
-      }
-      if (usage.completion_tokens) {
-        this.tokenCount.completion += usage.completion_tokens
-      }
-      if (usage.total_tokens) {
-        this.tokenCount.total += usage.total_tokens
+      const conversation = this.conversations.find(
+        conv => conv.id === this.activeConversationId
+      )
+      if (conversation) {
+        if (usage.prompt_tokens) {
+          conversation.tokenCount.prompt += usage.prompt_tokens
+        }
+        if (usage.completion_tokens) {
+          conversation.tokenCount.completion += usage.completion_tokens
+        }
+        if (usage.total_tokens) {
+          conversation.tokenCount.total += usage.total_tokens
+        }
       }
     },
 
@@ -153,6 +158,11 @@ export const useChatStore = defineStore('chat', {
         if (!conversation.title) {
           conversation.title = '新对话'
         }
+        conversation.tokenCount = {
+          total: 0,
+          prompt: 0,
+          completion: 0
+        }
       }
       
       // 触发状态更新
@@ -169,6 +179,15 @@ export const useChatStore = defineStore('chat', {
     // 获取当前会话的消息
     currentMessages(): Message[] {
       return this.currentConversation?.messages || []
+    },
+
+    // 获取当前会话的 token 统计
+    currentTokenCount(): { total: number; prompt: number; completion: number } {
+      const conversation = this.currentConversation
+      if (!conversation) {
+        return { total: 0, prompt: 0, completion: 0 }
+      }
+      return conversation.tokenCount
     }
   },
 
