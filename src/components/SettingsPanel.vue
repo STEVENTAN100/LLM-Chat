@@ -33,7 +33,11 @@ const settings = reactive({
   streamResponse: settingsStore.streamResponse,
   topP: settingsStore.topP,
   topK: settingsStore.topK,
-  frequencyPenalty: settingsStore.frequencyPenalty
+  frequencyPenalty: settingsStore.frequencyPenalty,
+  t2iConfig: {
+    imageSize: settingsStore.t2iConfig.imageSize,
+    inferenceSteps: settingsStore.t2iConfig.inferenceSteps
+  }
 })
 
 // 新增：控制添加/编辑模型对话框的显示
@@ -176,6 +180,31 @@ const getModelTagType = (type: string) => {
   }
   return typeMap[type] || 'info'
 }
+
+// 图片尺寸选项
+const imageSizeOptions = [
+  { label: '1024x1024', value: '1024x1024' },
+  { label: '960x1280', value: '960x1280' },
+  { label: '768x1024', value: '768x1024' },
+  { label: '720x1440', value: '720x1440' },
+  { label: '720x1280', value: '720x1280' }
+]
+
+// 添加当前选中模型的类型计算属性
+const currentModelType = computed(() => {
+    const model = modelOptions.value.find(m => m.value === settings.model)
+    return model?.type || 'plain'
+})
+
+// 是否显示LLM/VLM相关设置
+const showLLMSettings = computed(() => {
+    return ['plain', 'visual'].includes(currentModelType.value)
+})
+
+// 是否显示文生图相关设置
+const showT2ISettings = computed(() => {
+    return currentModelType.value === 'text2img'
+})
 </script>
 
 <template>
@@ -234,64 +263,92 @@ const getModelTagType = (type: string) => {
           </div>
         </el-form-item>
 
-        <!-- Temperature设置 -->
-        <el-form-item label="Temperature">
-          <el-slider v-model="settings.temperature" :min="0" :max="1" :step="0.1" show-input />
-        </el-form-item>
-
-        <!-- 最大Token设置 -->
-        <el-form-item label="最大Token">
-          <el-input-number v-model="settings.maxTokens" :min="1" :max="4096" :step="1" />
-        </el-form-item>
-
         <!-- API Key输入 -->
         <el-form-item label="API Key">
           <el-input v-model="settings.apiKey" type="password" show-password placeholder="请输入API Key" />
         </el-form-item>
 
-        <!-- 流式响应切换 -->
-        <el-form-item>
-          <template #label>
-            流式响应
-            <el-tooltip
-              content="开启后将实时显示AI回复"
-              placement="top"
+        <!-- LLM/VLM设置 -->
+        <template v-if="showLLMSettings">
+          <el-divider>模型参数</el-divider>
+          <!-- Temperature设置-->
+          <el-form-item label="Temperature">
+            <el-slider v-model="settings.temperature" :min="0" :max="1" :step="0.1" show-input />
+          </el-form-item>
+          <!-- 最大Token设置 -->
+          <el-form-item label="最大Token">
+            <el-input-number v-model="settings.maxTokens" :min="1" :max="4096" :step="1" />
+          </el-form-item>
+          <!-- 流式响应 -->
+          <el-form-item>
+            <template #label>
+              流式响应
+              <el-tooltip content="开启将后将实时显示AI回复" placement="top">
+                <el-icon class="info-icon"><InfoFilled /></el-icon>
+              </el-tooltip>
+            </template>
+            <el-switch v-model="settings.streamResponse" />
+          </el-form-item>
+          <!-- Top P设置 -->
+          <el-form-item label="Top P">
+            <el-slider v-model="settings.topP" :min="0" :max="1" :step="0.1" show-input />
+          </el-form-item>
+          <!-- Top K设置 -->
+          <el-form-item label="Top K">
+            <el-input-number v-model="settings.topK" :min="1" :max="100" :step="1" />
+          </el-form-item>
+          <!-- Frequency Penalty -->
+          <el-form-item>
+            <template #label>
+              重复惩罚
+              <el-tooltip content="控制模型重复使用相同词语的倾向，值越大越不倾向重复" placement="top">
+                <el-icon class="info-icon"><InfoFilled /></el-icon>
+              </el-tooltip>
+            </template>
+            <el-slider 
+              v-model="settings.frequencyPenalty" 
+              :min="-2" 
+              :max="2" 
+              :step="0.1" 
+              show-input
+            />
+          </el-form-item>
+        </template>
+
+        <!-- 文生图设置 -->
+        <template v-if="showT2ISettings">
+          <el-divider>文生图模型参数</el-divider>
+          
+          <el-form-item label="图片尺寸">
+            <el-select
+              v-model="settings.t2iConfig.imageSize"
+              class="w-full"
             >
-              <el-icon class="info-icon"><InfoFilled /></el-icon>
-            </el-tooltip>
-          </template>
-          <el-switch v-model="settings.streamResponse" />
-        </el-form-item>
+              <el-option
+                v-for="option in imageSizeOptions"
+                :key="option.value"
+                :label="option.label"
+                :value="option.value"
+              />
+            </el-select>
+          </el-form-item>
 
-        <!-- Top P -->
-        <el-form-item label="Top P">
-          <el-slider v-model="settings.topP" :min="0" :max="1" :step="0.1" show-input />
-        </el-form-item>
-
-        <!-- Top K -->
-        <el-form-item label="Top K">
-          <el-input-number v-model="settings.topK" :min="1" :max="100" :step="1" />
-        </el-form-item>
-
-        <!-- Frequency Penalty -->
-        <el-form-item>
-          <template #label>
-            重复惩罚
-            <el-tooltip
-              content="控制模型重复使用相同词语的倾向，值越大越不倾向重复"
-              placement="top"
-            >
-              <el-icon class="info-icon"><InfoFilled /></el-icon>
-            </el-tooltip>
-          </template>
-          <el-slider 
-            v-model="settings.frequencyPenalty" 
-            :min="-2" 
-            :max="2" 
-            :step="0.1" 
-            show-input
-          />
-        </el-form-item>
+          <el-form-item>
+            <template #label>
+              推理步数
+              <el-tooltip content="控制生成图像的精细程度，值越大生成图像越精细" placement="top">
+                <el-icon class="info-icon"><InfoFilled /></el-icon>
+              </el-tooltip>
+            </template>
+            <el-slider
+              v-model="settings.t2iConfig.inferenceSteps"
+              :min="10"
+              :max="50"
+              :step="1"
+              show-input
+            />
+          </el-form-item>
+        </template>
       </el-form>
 
       <!-- 保存设置按钮 -->

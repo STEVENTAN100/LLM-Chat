@@ -21,6 +21,11 @@ interface SettingsState {
     topK: number
     customModels: ModelOption[]
     frequencyPenalty: number
+    // 添加文生图配置
+    t2iConfig: {
+        imageSize: string
+        inferenceSteps: number
+    }
 }
 
 // 定义一个名为 'settings' 的 store
@@ -36,7 +41,12 @@ export const useSettingsStore = defineStore('settings', {
         topP: 0.7,
         topK: 50,
         customModels: [],
-        frequencyPenalty: 0
+        frequencyPenalty: 0,
+        // 初始化文生图配置
+        t2iConfig: {
+            imageSize: '1024x1024',
+            inferenceSteps: 20
+        }
     }),
 
     // 定义 store 的动作
