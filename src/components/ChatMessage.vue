@@ -430,12 +430,12 @@ const handleCopyAll = async () => {
 
 .message-text {
   background-color: var(--bg-color);
-  padding: 1rem;
+  padding: 0.75rem 1rem; /* 统一上下左右的 padding */
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
   white-space: pre-wrap;
+  line-height: 1; /* 增加行高，增强文本的间距感 */
 }
-
 .message-loading {
   display: flex;
   align-items: center;
@@ -456,7 +456,7 @@ const handleCopyAll = async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 0.5rem;
+  padding: 0 0rem;
   font-size: 0.8rem;
   color: var(--text-color-secondary);
 }
@@ -476,8 +476,9 @@ const handleCopyAll = async () => {
   }
   
   .el-button {
-    padding: 2px 4px;
-    height: 20px;
+    padding: 4px 4px;
+  border-radius: 8px;
+  transition: background-color 0.3s ease, color 0.3s ease;
     
     .el-icon {
       font-size: 14px;

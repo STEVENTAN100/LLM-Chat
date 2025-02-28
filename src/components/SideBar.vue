@@ -159,7 +159,7 @@ const handleRenameKeydown = (conv: { id: string }, event: KeyboardEvent) => {
   justify-content: space-between;
   padding: 0.5rem;
   margin-bottom: 0.5rem;
-  border-radius: 4px;
+  border-radius: 10px;
   cursor: pointer;
   transition: background-color 0.2s;
 
@@ -217,7 +217,7 @@ const handleRenameKeydown = (conv: { id: string }, event: KeyboardEvent) => {
   height: 24px;
   background-color: var(--bg-color);
   border: 1px solid var(--border-color);
-  border-radius: 50%;
+  border-radius: 60%;
   display: flex;
   align-items: center;
   justify-content: center;

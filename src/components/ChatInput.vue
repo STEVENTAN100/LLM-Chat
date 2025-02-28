@@ -232,6 +232,7 @@ const handleStop = () => {
   padding: 1rem;
   background-color: var(--bg-color);
   border-top: 1px solid var(--border-color);
+  // border-radius: var(--border-radius);
 }
 
 // 输入框和按钮组合的样式
@@ -239,6 +240,8 @@ const handleStop = () => {
   display: flex;
   gap: 1rem;
   margin-bottom: 0.5rem;
+  
+  
 
   .el-input {
     flex: 1;
@@ -246,8 +249,10 @@ const handleStop = () => {
     :deep(.el-textarea__inner) {
       transition: all 0.3s;
       line-height: 1.5;
-      padding: 8px 12px;
+      padding: 8px 8px;
       overflow-y: auto;
+      
+      
     }
   }
 }
@@ -257,6 +262,7 @@ const handleStop = () => {
   display: flex;
   gap: 0.5rem;
   align-items: flex-end;
+  
 }
 
 // Token计数器的样式
