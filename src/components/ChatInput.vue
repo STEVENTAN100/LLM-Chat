@@ -29,7 +29,7 @@ const placeholder = `输入消息，按Enter发送
 Shift + Enter 换行`
 
 // 计算属性，用于获取聊天存储中的Token计数
-const tokenCount = computed(() => chatStore.tokenCount)
+const tokenCount = computed(() => chatStore.currentTokenCount)
 
 const showUpload = ref(false)
 const selectedFiles = ref<File[]>([])

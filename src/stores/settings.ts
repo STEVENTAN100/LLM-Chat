@@ -21,6 +21,11 @@ interface SettingsState {
     topK: number
     customModels: ModelOption[]
     frequencyPenalty: number
+    // 添加文生图配置
+    t2iConfig: {
+        imageSize: string
+        inferenceSteps: number
+    }
 }
 
 // 定义一个名为 'settings' 的 store
@@ -30,13 +35,18 @@ export const useSettingsStore = defineStore('settings', {
         isDarkMode: false,
         temperature: 0.7,
         maxTokens: 1000,
-        model: 'DeepSeek-V3',
+        model: 'deepseek-ai/DeepSeek-V3',
         apiKey: '',
         streamResponse: true,
         topP: 0.7,
         topK: 50,
         customModels: [],
-        frequencyPenalty: 0
+        frequencyPenalty: 0,
+        // 初始化文生图配置
+        t2iConfig: {
+            imageSize: '1024x1024',
+            inferenceSteps: 20
+        }
     }),
 
     // 定义 store 的动作
@@ -93,9 +103,9 @@ export const useModelOptions = () => {
 export const defaultModelOptions: ModelOption[] = [
     { label: 'DeepSeek-V3', value: 'deepseek-ai/DeepSeek-V3', type: 'plain' },
     { label: 'DeepSeek-R1', value: 'deepseek-ai/DeepSeek-R1', type: 'plain' },
-    { label: 'DeepSeek-Janus-Pro-7B', value: 'deepseek-ai/Janus-Pro-7B', type: 'text2img' },
+    { label: 'FLUX.1-dev', value: 'black-forest-labs/FLUX.1-dev', type: 'text2img' },
     { label: 'Qwen2.5-7B', value: 'Qwen/Qwen2.5-7B-Instruct', type: 'plain' },
     { label: 'Qwen2.5-Coder-7B', value: 'Qwen/Qwen2.5-Coder-7B-Instruct', type: 'plain' },
     { label: 'Qwen2-VL-72B', value: 'Qwen/Qwen2-VL-72B-Instruct', type: 'visual' },
-    { label: 'Meta-Llama-3.1-8B', value: 'meta-llama/Meta-Llama-3.1-8B-Instruct', type: 'plain' },
+    { label: 'QVQ-72B-Preview', value: 'Qwen/QVQ-72B-Preview', type: 'visual' },
 ]

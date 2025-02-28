@@ -3,13 +3,22 @@ import { useSettingsStore } from '../stores/settings'
 // 定义API基础URL
 const API_BASE_URL = 'https://api.siliconflow.cn/v1'
 
-// 定义消息接口
-interface Message {
-    role: 'user' | 'assistant'
-    content: string
+// 定义视觉语言模型相关接口
+export interface VLMContentItem {
+    type: 'text' | 'image_url';
+    text?: string;
+    image_url?: {
+      url: string;
+    };
 }
 
-// 定义API请求负载接口
+// 定义消息接口
+export interface Message {
+    role: 'user' | 'assistant'
+    content: string | VLMContentItem[]
+}
+
+// 定义LLM/VLM API请求负载接口
 interface ChatPayload {
     model: string
     messages: Message[]
@@ -34,11 +43,12 @@ interface ChatPayload {
     }>
 }
 
-// 定义响应接口
+// 定义LLM/VLM API响应接口
 interface ChatResponse {
     choices: Array<{
         message?: {
             content: string
+            reasoning_content?: string
         }
     }>
     usage?: {
@@ -46,6 +56,39 @@ interface ChatResponse {
         completion_tokens: number
         total_tokens: number
     }
+}
+
+// 定义文生图 API请求负载接口
+interface ImageGenerationPayload {
+    model: string
+    prompt: string
+    image_size?: string
+    num_inference_steps?: number
+    seed?: number
+}
+
+// 定义文生图 API响应接口
+interface ImageGenerationResponse {
+    images: Array<{
+        url: string
+    }>
+    timings: {
+        inference: number
+    }
+    seed: number
+}
+
+// 自定义错误类，包含HTTP状态码和响应信息
+export class ApiError extends Error {
+  statusCode: number;
+  responseMessage: string;
+
+  constructor(statusCode: number, message: string, responseMessage: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.statusCode = statusCode;
+    this.responseMessage = responseMessage;
+  }
 }
 
 // 创建请求头
@@ -67,6 +110,31 @@ class ChatAPI {
         }
     }
 
+    // 通用错误处理方法
+    private async handleApiError(response: Response): Promise<never> {
+        const statusCode = response.status;
+        const statusMessage = response.statusText;
+        let responseMessage = '';
+        
+        try {
+            const responseText = await response.text();
+            if (!responseText) {
+                responseMessage = statusMessage;
+            } else {
+                try {
+                    const errorData = JSON.parse(responseText);
+                    responseMessage = errorData.message || responseText;
+                } catch {
+                    responseMessage = responseText;
+                }
+            }
+        } catch {
+            responseMessage = statusMessage;
+        }
+        
+        throw new ApiError(statusCode, statusMessage, responseMessage);
+    }
+
     async sendMessage(messages: Message[], stream = false): Promise<Response | ChatResponse> {
         const settingsStore = useSettingsStore()
 
@@ -83,15 +151,15 @@ class ChatAPI {
             response_format: {
                 type: "text"
             },
-            tools: [{
-                type: "function",
-                function: {
-                    description: "<string>",
-                    name: "<string>",
-                    parameters: {},
-                    strict: true
-                }
-            }]
+            // tools: [{
+            //     type: "function",
+            //     function: {
+            //         description: "<string>",
+            //         name: "<string>",
+            //         parameters: {},
+            //         strict: true
+            //     }
+            // }]
         }
 
         // 创建新的 AbortController
@@ -109,7 +177,8 @@ class ChatAPI {
             })
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`)
+                // throw new Error(`HTTP error! status: ${response.status}`)
+                return this.handleApiError(response);
             }
 
             if (stream) {
@@ -159,6 +228,37 @@ class ChatAPI {
         }
 
         return await response.json()
+    }
+
+    // 文生图方法
+    async sendT2IMessage(prompt: string): Promise<ImageGenerationResponse> {
+        const settingsStore = useSettingsStore()
+        
+        const payload: ImageGenerationPayload = {
+            model: settingsStore.model,
+            prompt: prompt,
+            image_size: settingsStore.t2iConfig.imageSize,
+            num_inference_steps: settingsStore.t2iConfig.inferenceSteps,
+            seed: Math.floor(Math.random() * 1000000)
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/images/generations`, {
+                method: 'POST',
+                headers: createHeaders(),
+                body: JSON.stringify(payload)
+            })
+
+            if (!response.ok) {
+                // throw new Error(`HTTP error! status: ${response.status}`)
+                return this.handleApiError(response);
+            }
+
+            return await response.json()
+        } catch (error) {
+            console.error('生成图片失败:', error)
+            throw error
+        }
     }
 }
 

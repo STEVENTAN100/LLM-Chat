@@ -2,14 +2,15 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import { Setting } from '@element-plus/icons-vue'
 import { useChatStore } from '../stores/chat.ts'
-import { useSettingsStore } from '../stores/settings.ts'
-import { chatApi } from '../utils/api.ts'
+import { useSettingsStore, useModelOptions } from '../stores/settings.ts'
+import { chatApi, ApiError } from '../utils/api.ts'
 import { messageHandler, type SyncResponse } from '../utils/messageHandler.ts'
 import ChatMessage from '../components/ChatMessage.vue'
 import ChatInput from '../components/ChatInput.vue'
 import SettingsPanel from '../components/SettingsPanel.vue'
 import SideBar from '../components/SideBar.vue'
 import SearchBar from '../components/SearchBar.vue'
+import { ElMessage } from 'element-plus'
 
 // 初始化聊天存储
 const chatStore = useChatStore()
@@ -44,12 +45,186 @@ watch(() => chatStore.activeConversationId, () => {
     })
 })
 
+// 将文本消息转换为VLM消息，text -> VLMContentItem[]
+const convertTextToMessageContent = (text: string) => {
+  const content = [];  // VLMContentItem[]
+  const imageRegex = /!\[.*?\]\((data:image\/(png|jpg|jpeg);base64,[^)]+)\)/g;
+  let match;
+  let lastIndex = 0;
+  let firstTextExtracted = false; // 添加一个标志变量，用于标记是否已提取了第一段文本
+
+  while ((match = imageRegex.exec(text)) !== null) {
+    const imageUrl = match[1];
+    const imageStartIndex = match.index;
+
+    // 提取图片前的文本，确保不是空白字符
+    if (imageStartIndex > lastIndex && !firstTextExtracted) {
+      firstTextExtracted = true;
+      const textContent = text.substring(lastIndex, imageStartIndex).trim();
+      if (textContent && !/^\s*$/.test(textContent)) {
+        content.push({ type: "text" as const, text: textContent });
+      }
+    }
+
+    // 提取image_url(data url)
+    content.push({
+      type: "image_url" as const,
+      image_url: { url: imageUrl },
+    });
+
+    lastIndex = imageRegex.lastIndex;
+  }
+
+  // 若没有图片，则提取整个文本
+  if (!firstTextExtracted) {
+    content.push({ type: "text" as const, text: text });
+  }
+
+  return content;
+}
+
+// 将普通消息列表转换为VLM消息列表
+const createVLMMessage = () => {
+  // 获取当前会话的所有消息
+  return currentChatMessages.value.map(message => {
+    // 将每条消息转换为VLM格式
+    const content = !message.hasImage ? [{ type: "text" as const, text: message.content }] : convertTextToMessageContent(message.content);
+    return {
+      role: message.role,
+      content: content
+    };
+  });
+}
+
+// 发送LLM/VLM消息
+const sendMessage = async (modelType: string) => {
+    console.log('发送LLM/VLM消息')
+    try {
+        const settingsStore = useSettingsStore()
+        let response: Response | SyncResponse
+        
+        if (modelType === 'visual'){
+            response = await chatApi.sendMessage(createVLMMessage().slice(0, -1), settingsStore.streamResponse)
+        } else {
+            response = await chatApi.sendMessage(
+                currentChatMessages.value.slice(0, -1).map(m => ({
+                    role: m.role,
+                    content: m.content
+                })),
+                settingsStore.streamResponse
+            )
+        }
+
+        // 处理流式响应或同步响应
+        if (settingsStore.streamResponse) {
+            // 流式处理，并更新消息和token计数
+            await messageHandler.processStreamResponse(response as Response, {
+                updateMessage: (content, reasoning_content) => chatStore.updateLastMessage(content, reasoning_content),
+                updateTokenCount: (usage) => chatStore.updateTokenCount(usage)
+            });
+        } else {
+            // 同步处理，并更新消息和token计数
+            const result = await messageHandler.processSyncResponse(response as SyncResponse, (content, reasoning_content) => {
+                chatStore.updateLastMessage(content, reasoning_content)
+            });
+            if (result.usage) {
+                chatStore.updateTokenCount(result.usage)
+            }
+        }
+    } catch (error) {
+        console.error('发送消息失败:', error)
+        
+        // 错误消息格式化逻辑
+        let errorMessage = '抱歉，发生了错误，请稍后重试。'
+        
+        if (error instanceof ApiError) {
+            // 使用 ElMessage 显示错误信息，使用 HTML 标签添加样式
+            ElMessage.error({
+                dangerouslyUseHTMLString: true, // 允许使用 HTML
+                message: `
+                    <div style="font-size: 14px;">
+                        <span style="color: #F56C6C; font-weight: bold;">${error.statusCode}</span>
+                        <span style="color: #F56C6C; font-weight: bold;"> ${error.message}</span>
+                        <br>
+                        <span style="color: #909399; font-size: 13px;">${error.responseMessage || '未知错误'}</span>
+                    </div>
+                `,
+                duration: 5000,
+                showClose: true
+            })
+        } else {
+            // ElMessage.error('发送消息失败，请稍后重试')
+        }
+        
+        chatStore.updateLastMessage(errorMessage, '')
+    } finally {
+        // 重置正在生成回复的对话ID为null,表示当前没有对话在等待AI响应
+        chatStore.currentGeneratingId = null
+        chatStore.isLoading = false
+    }
+}
+
+// 发送T2I消息
+const sendT2IMessage = async () => {
+    console.log('发送T2I消息')
+    try {
+        // 获取最后一条用户消息的内容作为提示词
+        const userMessage = currentChatMessages.value.slice(-2)[0]
+        if (!userMessage || userMessage.role !== 'user') {
+            throw new Error('无效的用户消息')
+        }
+
+        // 提取提示词（如果消息以"画"或"/image"开头，则去掉这些前缀）
+        const prompt = userMessage.content
+            .replace(/^画\s*|^\/image\s+/i, '')
+            .trim()
+
+        // 调用文生图API
+        const response = await chatApi.sendT2IMessage(prompt)
+        
+        // 处理图片响应
+        await messageHandler.processT2IResponse(response, (content) => {
+            chatStore.updateLastMessage(content)
+        })
+
+    } catch (error) {
+        console.error('图片生成失败:', error)
+        
+        let errorMessage = '抱歉，图片生成失败，请稍后重试。'
+        
+        if (error instanceof ApiError) {
+            // 使用 ElMessage 显示错误信息，使用 HTML 标签添加样式
+            ElMessage.error({
+                dangerouslyUseHTMLString: true, // 允许使用 HTML
+                message: `
+                    <div style="font-size: 14px;">
+                        <span style="color: #F56C6C; font-weight: bold;">${error.statusCode}</span>
+                        <span style="color: #F56C6C; font-weight: bold;"> ${error.message}</span>
+                        <br>
+                        <span style="color: #909399; font-size: 13px;">${error.responseMessage || '未知错误'}</span>
+                    </div>
+                `,
+                duration: 5000,
+                showClose: true
+            })
+        } else {
+            ElMessage.error('图片生成失败，请稍后重试')
+        }
+        
+        chatStore.updateLastMessage(errorMessage)
+    } finally {
+        // 重置正在生成回复的对话ID为null,表示当前没有对话在等待AI响应
+        chatStore.currentGeneratingId = null
+        chatStore.isLoading = false
+    }
+}
+
 /**
  * 发送消息处理函数
  * @param {string} content 用户输入的消息内容
  */
 const handleSend = async (content: string) => {
-    console.log('发送消息', content)
+    console.log('发送消息')
 
     // if (isLoading.value) return
     // 添加用户消息和助理的空消息
@@ -60,42 +235,20 @@ const handleSend = async (content: string) => {
     // 这样可以追踪哪个对话正在等待AI响应
     chatStore.currentGeneratingId = chatStore.activeConversationId
 
-    try {
-        // 获取设置并发送消息
-        const settingsStore = useSettingsStore()
-        const response = await chatApi.sendMessage(
-            currentChatMessages.value.slice(0, -1).map(m => ({
-                role: m.role,
-                content: m.content
-            })),
-            settingsStore.streamResponse
-        )
+    // 获取设置并发送消息
+    const settingsStore = useSettingsStore()
+    const modelOptions = useModelOptions()
+    const modelOption = modelOptions.value.find(m => m.value === settingsStore.model)
+    const modelType = modelOption?.type
 
-        // 处理流式响应或同步响应
-        if (settingsStore.streamResponse) {
-            // 流式处理，并更新消息和token计数
-            await messageHandler.processStreamResponse(response as Response, {
-                updateMessage: (content) => chatStore.updateLastMessage(content),
-                updateTokenCount: (usage) => chatStore.updateTokenCount(usage)
-            });
-        } else {
-            // 同步处理，并更新消息和token计数
-            const result = await messageHandler.processSyncResponse(response as SyncResponse, (content) => {
-                chatStore.updateLastMessage(content)
-            });
-            if (result.usage) {
-                chatStore.updateTokenCount(result.usage)
-            }
-        }
-    } catch (error) {
-        console.error('发送消息失败:', error)
-        chatStore.updateLastMessage('抱歉，发生了错误，请稍后重试。')
-    } finally {
-        // 重置正在生成回复的对话ID为null,表示当前没有对话在等待AI响应
-        chatStore.currentGeneratingId = null
-        chatStore.isLoading = false
+    // 根据模型类型发送消息
+    if (modelType === 'plain' || modelType === 'visual'){
+        await sendMessage(modelType)
+    } else if (modelType === 'text2img'){
+        await sendT2IMessage()
+    } else {
+        throw new Error('无效的模型类型')
     }
-
 }
 
 /**
@@ -126,12 +279,12 @@ const handleMessageDelete = (message: { id: number }) => {
     }
 }
 // 处理重新生成
-const handleRegenerate = async (message: { id: number; timestamp: string; role: "user" | "assistant"; content: string }) => {
-    console.log(message)
-    console.log(chatStore.currentMessages)
+const handleRegenerate = async (message: { id: number; timestamp: string; role: "user" | "assistant"; content: string; reasoning_content?: string }) => {
+    // console.log(message)
+    // console.log(chatStore.currentMessages)
 
     const index = chatStore.currentMessages.findIndex(m => m.id === message.id && m.role === "assistant")
-    console.log(index)
+    // console.log(index)
     if (index !== -1 && index > 0) {
         // 获取上一条用户消息
         const userMessage = chatStore.currentMessages[index - 1]
@@ -142,7 +295,7 @@ const handleRegenerate = async (message: { id: number; timestamp: string; role: 
 
         chatStore.isLoading = true
         try {
-            console.log(userMessage.content)
+            // console.log(userMessage.content)
             // 重新发送请求
             await handleSend(userMessage.content)
         } catch (error) {
@@ -157,11 +310,12 @@ const handleRegenerate = async (message: { id: number; timestamp: string; role: 
 
 // 添加暂停处理函数
 const handleStop = () => {
-  // 中止当前的请求
-  chatApi.abortRequest()
-  // 重置状态
-  chatStore.currentGeneratingId = null
-  chatStore.isLoading = false
+    // 中止当前的请求
+    chatApi.abortRequest()
+    
+    // 重置状态
+    chatStore.currentGeneratingId = null
+    chatStore.isLoading = false
 }
 </script>
 

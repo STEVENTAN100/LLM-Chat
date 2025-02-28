@@ -1,0 +1,85 @@
+name: 打包应用并上传腾讯云
+
+on:
+  push:
+    branches:
+      - master  # 在master分支推送时触发
+      - test_ly  # 在test_ly分支推送时触发
+
+jobs:
+  # 构建、测试、Lint、TypeScript检查
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 获取代码
+      - name: 迁出代码
+        uses: actions/checkout@v2
+
+      # 安装Node.js
+      - name: 安装Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '22.13.1'
+
+      # 安装依赖
+      - name: 安装依赖
+        run: npm install
+
+      # Lint检查
+      - name: 运行Lint检查
+        run: npm run lint  # 确保你的 package.json 中有 lint 脚本
+
+      # TypeScript 检查
+      - name: 运行 TypeScript 检查
+        run: npm run tsc -- --noEmit  # TypeScript 类型检查
+
+      # 运行单元测试并检查覆盖率
+      # - name: 运行单元测试并生成覆盖率报告
+      #   run: npx vitest run --coverage
+
+      # 打包应用
+      - name: 打包应用
+        run: |
+          npm update
+          npm run build
+
+  # 发布到腾讯云
+  deploy:
+    needs: build  # 确保发布操作在构建、测试完成后进行
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      # 获取代码
+      - name: 迁出代码
+        uses: actions/checkout@v2
+
+      # 安装Node.js
+      - name: 安装Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '22.13.1'
+
+      # 安装依赖
+      - name: 安装依赖
+        run: npm install
+
+      # 打包应用
+      - name: 打包应用
+        run: npm run build
+
+      # 发布到腾讯云
+      - name: 发布到腾讯云
+        uses: easingthemes/ssh-deploy@v2.1.1
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}  # 使用 GitHub Secrets 中存储的私钥
+          ARGS: "-avzr --delete --exclude 'dist/.user.ini'"  # 排除 `.user.ini` 文件
+          SOURCE: "dist"  # 源目录
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}  # 远程服务器 IP 地址
+          REMOTE_USER: "root"  # 远程服务器用户名
+          TARGET: "/www/wwwroot"  # 远程服务器的目标路径
+

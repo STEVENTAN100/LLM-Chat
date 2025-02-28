@@ -2,7 +2,7 @@
 import { computed, ref, nextTick } from 'vue'
 import { renderMarkdown } from '../utils/markdown.ts'
 import { ElInput, ElMessage, ElMessageBox } from 'element-plus'
-import { Edit, Delete, RefreshRight, CopyDocument } from '@element-plus/icons-vue'
+import { Edit, Delete, RefreshRight, CopyDocument, Lightning } from '@element-plus/icons-vue'
 import { useChatStore } from '../stores/chat.ts'
 
 
@@ -155,7 +155,16 @@ const handleCopyAll = async () => {
     <div class="message-content">
       <!-- 显示模式 -->
       <div class="message-text" v-if="!loading && !isEditing">
-        <!-- 使用 v-html 渲染 Markdown 内容 -->
+        <!-- 思考内容 -->
+        <div class="reasoning-content" v-if="message.reasoning_content">
+            <div class="reasoning-header">
+                <el-icon><Lightning /></el-icon>
+                <span>思考过程</span>
+            </div>
+            <!-- 使用 v-html 渲染 Markdown 内容 -->
+            <div class="markdown-body" v-html="renderMarkdown(message.reasoning_content)"></div>
+        </div>
+        <!-- 回答内容 -->
         <div class="markdown-body" v-html="renderedContent" ref="markdownBody" @click="handleCodeBlockClick"></div>
       </div>
 
@@ -434,7 +443,17 @@ const handleCopyAll = async () => {
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
   white-space: pre-wrap;
+<<<<<<< HEAD
   line-height: 1; /* 增加行高，增强文本的间距感 */
+=======
+
+  // 如果存在思考内容，调整回答内容的样式
+  .reasoning-content + .markdown-body {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+  }
+>>>>>>> origin/master
 }
 .message-loading {
   display: flex;
@@ -515,6 +534,33 @@ const handleCopyAll = async () => {
     display: flex;
     justify-content: flex-end;
     gap: 0.5rem;
+  }
+}
+
+.reasoning-content {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background-color: var(--bg-color-secondary);
+  border-left: 3px solid var(--warning-color);
+  border-radius: var(--border-radius);
+
+  .reasoning-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--warning-color);
+    font-size: 0.9rem;
+    font-weight: 500;
+
+    .el-icon {
+      font-size: 1.1rem;
+    }
+  }
+
+  .markdown-body {
+    font-size: 0.95rem;
+    color: var(--text-color-secondary);
   }
 }
 </style>
