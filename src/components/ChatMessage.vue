@@ -267,7 +267,7 @@ const handleCopyAll = async () => {
         margin: 0;
         font-size: 85%;
         background-color: var(--code-bg);
-        border-radius: 3px;
+        border-radius: var(--border-radius);
         color: var(--code-text);
       }
 

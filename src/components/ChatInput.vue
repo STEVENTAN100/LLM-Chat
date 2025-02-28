@@ -215,7 +215,7 @@ const handleStop = () => {
               <component :is="generating ? VideoPlay : Position" />
             </el-icon>
           </template>
-          {{ generating ? '暂停' : '发送' }}
+          {{ generating ? 'Stop' : 'Send' }}
         </el-button>
       </div>
     </div>
@@ -229,10 +229,14 @@ const handleStop = () => {
 <style lang="scss" scoped>
 // 聊天输入容器的样式
 .chat-input-container {
-  padding: 1rem;
+  padding: 0.3rem;
   background-color: var(--bg-color);
   border-top: 1px solid var(--border-color);
 }
+.el-button--primary {
+  border-radius: var(--border-radius); /* 调整为你想要的圆角大小 */
+}
+
 
 // 输入框和按钮组合的样式
 .input-wrapper {
@@ -248,6 +252,7 @@ const handleStop = () => {
       line-height: 1.5;
       padding: 8px 12px;
       overflow-y: auto;
+      
     }
   }
 }
@@ -257,13 +262,14 @@ const handleStop = () => {
   display: flex;
   gap: 0.5rem;
   align-items: flex-end;
+  border-radius: var(--border-radius);
 }
 
 // Token计数器的样式
 .token-counter {
-  font-size: 0.8rem;
+  font-size: 0.6rem;
   color: var(--text-color-secondary);
-  text-align: right;
+  text-align: center;
 }
 
 .upload-area {
@@ -321,6 +327,7 @@ const handleStop = () => {
         right: -0.5rem;
         padding: 0.25rem;
         transform: scale(0.8);
+        border-radius: var(--border-radius);
       }
     }
   }
@@ -328,6 +335,8 @@ const handleStop = () => {
 
 .pulsing-button {
   animation: pulse 1.5s infinite;
+  border-radius: var(--border-radius);
+
 }
 
 @keyframes pulse {

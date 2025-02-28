@@ -236,7 +236,7 @@ watch(search, (newValue, oldValue) => {
   padding: 0.5rem 0;
   list-style: none;
   background: white;
-  border-radius: 0.375rem;
+  border-radius: var(--border-radius);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   width: 100%; /* 使用相对宽度 */
   max-height: 300px;
@@ -292,7 +292,7 @@ watch(search, (newValue, oldValue) => {
       margin: 0;
       font-size: 85%;
       background-color: var(--code-bg);
-      border-radius: 3px;
+      border-radius: var(--border-radius);
       color: var(--code-text);
     }
 
@@ -441,6 +441,13 @@ watch(search, (newValue, oldValue) => {
     }
   }
 }
+
+
+
+// .el-button--primary {
+//   border-radius: var(--border-radius); /* 调整为你想要的圆角大小 */
+// }
+
 
 .assistant-avatar {
   background-color: var(--success-color);

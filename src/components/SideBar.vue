@@ -159,7 +159,7 @@ const handleRenameKeydown = (conv: { id: string }, event: KeyboardEvent) => {
   justify-content: space-between;
   padding: 0.5rem;
   margin-bottom: 0.5rem;
-  border-radius: 4px;
+  border-radius: var(--border-radius);
   cursor: pointer;
   transition: background-color 0.2s;
 
@@ -208,6 +208,43 @@ const handleRenameKeydown = (conv: { id: string }, event: KeyboardEvent) => {
   }
 }
 
+/* 修改 el-button 的默认样式 */
+.el-button {
+  background-color: #2196F3; /* 背景颜色改为蓝色 */
+  border-color: #2196F3; /* 边框颜色改为蓝色 */
+  color: white; /* 文字颜色保持为白色 */
+  border-radius: var(--border-radius); /* 使用自定义变量设置圆角大小 */
+
+  &:hover {
+    background-color: #1976D2; /* 鼠标悬停时的背景颜色改为深蓝色 */
+  
+  }
+
+  &:active {
+    background-color: white; /* 按下时的背景颜色反转为白色 */
+  
+    color: #2196F3; /* 按下时的文字颜色反转为蓝色 */
+  }
+}
+
+/* 修改 el-button 的圆形样式 */
+.el-button.is-circle {
+  background-color: #2196F3; /* 背景颜色改为蓝色 */
+  border-color: #2196F3; /* 边框颜色改为蓝色 */
+  color: white; /* 文字颜色保持为白色 */
+  border-radius: var(--border-radius); /* 使用自定义变量设置圆角大小 */
+  width: 40px; /* 可选：设置圆形按钮的宽度 */
+  height: 40px; /* 可选：设置圆形按钮的高度 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background-color: #1976D2; /* 鼠标悬停时的背景颜色改为深蓝色 */
+  
+  }
+}
+
 .collapse-btn {
   position: absolute;
   right: -12px;
@@ -217,7 +254,7 @@ const handleRenameKeydown = (conv: { id: string }, event: KeyboardEvent) => {
   height: 24px;
   background-color: var(--bg-color);
   border: 1px solid var(--border-color);
-  border-radius: 50%;
+  border-radius: var(--border-radius);
   display: flex;
   align-items: center;
   justify-content: center;
