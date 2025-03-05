@@ -1,13 +1,15 @@
 # LLM-Chat
-一个基于 Vue3 + Element Plus + Typescript 的现代化 AI 聊天应用，支持多种大语言模型，提供流畅的对话体验。
+一个基于 Vue3 + Vite + Element Plus + Typescript 的现代化 AI 聊天应用，支持多种大语言模型，提供流畅的对话体验。
 
 ## 特性
 
-- 支持多种大语言模型 (DeepSeek R1、OpenAI o1/o3系列、Gemini 等)
+- 支持多种大语言模型 (DeepSeek R1/V3、Qwen系列、Flux文生图 等)
 - 流式响应，实时显示 AI 回复
-- 深色/浅色主题切换
+- 深色/浅色主题切换，UI界面圆角化
 - 完整的 Markdown 支持，包括代码高亮
 - 消息编辑、重新生成、复制等功能
+- 侧边栏新建话题，每个话题支持token分别统计
+- 全局对话搜索框（Ctrl+K），既可以搜索历史，也能快捷对话
 - 支持图片和文件上传
 - 自动保存对话历史
 - 丰富的模型参数配置
@@ -89,6 +91,7 @@ src/
 - Temperature - 控制回答的随机性 (0-1)
 - Top P - 控制词汇采样范围
 - Top K - 控制词汇选择数量
+- Frequency Penalty - 重复文字惩罚
 - 最大 Token - 限制回答长度
 - 流式响应 - 开启/关闭打字机效果
 
