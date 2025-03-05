@@ -1,5 +1,5 @@
 # LLM-Chat
-一个基于 Vue3 + Vite + Element Plus + Typescript 的现代化 AI 聊天应用，支持多种大语言模型，提供流畅的对话体验。
+基于 Vue3 + Vite + Element Plus + Typescript 的现代化 AI 聊天应用，支持多种大语言模型，提供流畅的对话体验。
 
 ## 特性
 
@@ -96,7 +96,7 @@ src/
 - 流式响应 - 开启/关闭打字机效果
 
 ## CICD
-项目部署网站为：https://139.155.143.204/、https://200success.online（电脑访问可以）
+项目部署网站为：https://139.155.143.204/ 、 https://200success.online （电脑访问可以）
 
 ## 鸣谢
 
