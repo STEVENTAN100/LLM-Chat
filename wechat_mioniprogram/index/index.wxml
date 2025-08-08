@@ -1,0 +1,5 @@
+<view class="page-body">
+  <view class="page-section page-section-gap">
+    <web-view src="http://139.155.143.204/"></web-view>
+  </view>
+</view>
